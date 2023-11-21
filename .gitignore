@@ -1,0 +1,48 @@
+# Operating System Files
+
+*.DS_Store
+Thumbs.db
+*.sw?
+.#*
+*#
+*~
+*.sublime-*
+
+nbactions.xml
+
+# Build Artifacts
+
+.gradle/
+log/
+build/
+target/
+bin/
+dependency-reduced-pom.xml
+
+# Eclipse Project Files
+
+.classpath
+.project
+.settings/
+.run/
+.attach_pid*
+
+# VS Code
+.vscode/
+!.vscode/launch.json
+
+# IntelliJ IDEA Files
+
+*.iml
+*.ipr
+*.iws
+*.idea
+
+# Local
+README.html
+request.xml
+output.xml
+application-local.properties
+*.orig
+*.log
+*.log.gz
