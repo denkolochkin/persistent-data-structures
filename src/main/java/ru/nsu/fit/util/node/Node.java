@@ -1,8 +1,13 @@
 package ru.nsu.fit.util.node;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 public class Node<E> {
     private List<E> value;
     private List<Node<E>> child;
@@ -39,21 +44,4 @@ public class Node<E> {
             }
         }
     }
-
-    public List<Node<E>> getChild() {
-        return child;
-    }
-
-    public void setChild(List<Node<E>> child) {
-        this.child = child;
-    }
-
-    public List<E> getValue() {
-        return value;
-    }
-
-    public void setValue(List<E> value) {
-        this.value = value;
-    }
-
 }
