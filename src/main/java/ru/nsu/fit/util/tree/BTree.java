@@ -14,7 +14,7 @@ public class BTree<E> {
     private int depth;
     private int mask;
     private int maxSize;
-    private int bits;
+    private int bits = 2;
     private int width;
     private final Node<E> root;
     private int size = 0;
@@ -46,22 +46,20 @@ public class BTree<E> {
         this.mask = other.mask;
     }
 
-    public BTree(BTree<E> other, Integer newSize, Integer maxIndex) {
+    public BTree(BTree<E> other, Integer newSize) {
         initialization(other.depth,other.bits);
-        this.root = new Node<>(other.root, maxIndex);
+        this.root = other.createSubTree(newSize);
         this.size = newSize;
     }
 
     protected void initialization(int depth, int bits) {
+        this.bits = bits;
         if(depth > 0) {
             this.depth = depth;
-            this.bits = bits;
         }else{
             this.depth = 1;
-            this.bits = bits;
         }
 
-        maxSize = (int) Math.pow(2, bits * depth);
         updateInformationAboutTree();
     }
 
@@ -69,6 +67,10 @@ public class BTree<E> {
         mask = (int) Math.pow(2, bits) - 1;
         maxSize = (int) Math.pow(2, bits * depth);
         width = (int) Math.pow(2, bits);
+    }
+
+    public int getSize() {
+        return size;
     }
 
     @Override
@@ -232,6 +234,23 @@ public class BTree<E> {
         return foundNode;
     }
 
+    public Node<E> createSubTree(int maxIndex) {
+        Node<E> myNode = new Node<>(root, ((maxIndex - 1 >> (bits * (depth - 1))) & mask));
+        Node<E> foundNode = myNode;
+
+        for (int level = bits * (depth - 1); level > 0; level -= bits) {
+            int widthIndex = ((maxIndex - 1) >> level) & mask;
+            int widthIndexNext = ((maxIndex - 1) >> (level - bits)) & mask;
+
+            Node<E> childNode = foundNode.getChild().get(widthIndex);
+            Node<E> newNode = new Node<>(childNode, widthIndexNext);
+            foundNode.getChild().set(widthIndex, newNode);
+            foundNode = newNode;
+        }
+
+        return myNode;
+    }
+
     public E get(int index) {
         if(index < 0 || index >= size){
             throw new IndexOutOfBoundsException();
@@ -245,9 +264,5 @@ public class BTree<E> {
         }
 
         return foundNode.getValue().get(index & mask);
-    }
-
-    public int getMaxIndex(int index){
-        return (index >> (bits * (depth - 1))) & mask;
     }
 }
