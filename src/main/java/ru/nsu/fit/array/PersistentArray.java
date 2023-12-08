@@ -1,102 +1,194 @@
 package ru.nsu.fit.array;
 
+
+import ru.nsu.fit.Interfaces.UndoRedoInterface;
 import ru.nsu.fit.util.tree.BTree;
 
 import java.util.*;
 
-public class PersistentArray<T> implements List<T> {
+/**
+ * PersistentArray использует копирование пути для Б-дерева.
+ */
+public class PersistentArray<T> implements List<T>, UndoRedoInterface {
     private static final int TABLE_SIZE = 8;
-
-    BTree<T> bTree;
+    protected final Stack<BTree<T>> redoStack = new Stack<>();
+    protected final Stack<BTree<T>> undoStack = new Stack<>();
 
     public PersistentArray() {
         this(TABLE_SIZE);
     }
 
     public PersistentArray(int size) {
-        bTree = new BTree<>(size);
+        BTree<T> head = new BTree<>(size);
+        undoStack.push(head);
+        redoStack.clear();
     }
 
+    public PersistentArray(PersistentArray<T> other) {
+        this.undoStack.addAll(other.undoStack);
+        this.redoStack.addAll(other.redoStack);
+    }
+
+    @Override
+    public void undo() {
+        if (!undoStack.empty()) {
+            redoStack.push(undoStack.pop());
+        }
+    }
+
+    @Override
+    public void redo() {
+        if (!redoStack.empty()) {
+            undoStack.push(redoStack.pop());
+        }
+    }
+
+    /**
+     * Возвращает количество элементов в массиве.
+     *
+     * @return количество элементов в массиве
+     */
     @Override
     public int size() {
-        return bTree.getSize();
+        return takeLatestVersion().getSize();
     }
 
-
+    /**
+     * Возвращает true, если массив пуст.
+     *
+     * @return true, если массив пуст
+     */
     @Override
     public boolean isEmpty() {
-        return bTree.getSize() <= 0;
+        return takeLatestVersion().getSize() <= 0;
     }
 
-
+    /**
+     * Заменяет элемент массива.
+     *
+     * @param index   индекс элемента который надо заменить
+     * @param element новый элемент
+     * @return заменённый элемент
+     */
     @Override
     public T set(int index, T element) {
-        if(index < 0 || index >= size()){
+        if (index < 0 || index >= size()) {
             throw new IndexOutOfBoundsException();
         }
 
         T result = get(index);
 
-        bTree = new BTree<T>(this.bTree);
+        BTree<T> bTree = new BTree<T>(takeLatestVersion());
+        undoStack.push(bTree);
+        redoStack.clear();
 
         bTree.set(index, element);
 
         return result;
     }
 
+    /**
+     * Добавление элемента в конец массива.
+     *
+     * @param element элемени
+     * @return true если массив изменился в результате вызова
+     */
     @Override
     public boolean add(T element) {
-        BTree<T> tree = new BTree<>(bTree);
-
+        BTree<T> tree = new BTree<>(takeLatestVersion());
+        undoStack.push(tree);
+        redoStack.clear();
         return tree.add(element);
     }
 
+    public PersistentArray<T> conj(T element) {
+        PersistentArray<T> result = new PersistentArray<>(this);
+        result.add(element);
+        return result;
+    }
+
+    public PersistentArray<T> assoc(int index, T element) {
+        PersistentArray<T> result = new PersistentArray<>(this);
+        result.set(index, element);
+        return result;
+    }
+
+    /**
+     * Вставляет указанный элемент в указанную позицию в этом списке
+     * <p>
+     * Сдвигает элемент, находящийся в данный момент в этой позиции (если есть),
+     * и любые последующие элементы вправо (добавляет единицу к их индексам).
+     * </p>
+     *
+     * @param index   индекc, указание позиции
+     * @param element элемент
+     */
+
     @Override
     public void add(int index, T element) {
-        if(index < 0 || index >= size()){
+        if (index < 0 || index >= size()) {
             throw new IndexOutOfBoundsException();
         }
 
-        BTree<T> oldHead = bTree;
+        BTree<T> oldHead = takeLatestVersion();
 
-        bTree = new BTree<>(bTree, index + 1, bTree.getMaxIndex(index));
+        BTree<T> bTree = new BTree<>(takeLatestVersion(), index + 1);
+        undoStack.push(bTree);
+        redoStack.clear();
 
-        bTree.add(index, element);
+        bTree.set(index, element);
 
         for (int i = index; i < oldHead.getSize(); i++) {
             bTree.add(oldHead.get(i));
         }
     }
 
+    /**
+     * Удаляет элемент в указанной позиции.
+     * <p>
+     * Сдвигает любые последующие элементы влево (вычитает единицу из их индексов).
+     * Возвращает элемент, который был удален из массива.
+     * </p>
+     * @param index позиция элемента
+     * @return удаленный элемент
+     */
     @Override
     public T remove(int index) {
-        if(index < 0 || index >= size()){
+        if (index < 0 || index >= size()) {
             throw new IndexOutOfBoundsException();
         }
 
         T result = get(index);
 
-        BTree<T> oldHead = bTree;
+        BTree<T> oldHead = takeLatestVersion();
 
-        bTree = new BTree<T>(bTree, index + 1, bTree.getMaxIndex(index));
+        BTree<T> newHead = new BTree<>(takeLatestVersion(), index + 1);
+        undoStack.push(newHead);
+        redoStack.clear();
 
-        bTree.remove(index);
+        newHead.remove(index);
 
         for (int i = index + 1; i < oldHead.getSize(); i++) {
-            bTree.add(oldHead.get(i));
+            newHead.add(oldHead.get(i));
         }
 
         return result;
     }
 
+    /**
+     * Удаляет все элементы из этого массива.
+     * Массив будет пуст после возврата этого вызова.
+     */
     @Override
     public void clear() {
-        BTree<T> head = new BTree<>(bTree.getSize());
+        BTree<T> head = new BTree<>(takeLatestVersion().getSize());
+        undoStack.push(head);
+        redoStack.clear();
     }
 
     @Override
     public T get(int index) {
-        return bTree.get(index);
+        return takeLatestVersion().get(index);
     }
 
     @Override
@@ -109,7 +201,7 @@ public class PersistentArray<T> implements List<T> {
         Object[] objects = new Object[size()];
 
         for (int i = 0; i < objects.length; i++) {
-            objects[i] = bTree.get(i);
+            objects[i] = takeLatestVersion().get(i);
         }
 
         return objects;
@@ -136,7 +228,10 @@ public class PersistentArray<T> implements List<T> {
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        BTree<T> tree = new BTree<>(bTree);
+        BTree<T> tree = new BTree<>(takeLatestVersion());
+        undoStack.push(tree);
+        redoStack.clear();
+
         boolean modified = false;
         for (T e : c) if (tree.add(e)) modified = true;
         return modified;
@@ -144,19 +239,21 @@ public class PersistentArray<T> implements List<T> {
 
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
-        BTree<T> oldHead = bTree;
+        BTree<T> oldHead = takeLatestVersion();
 
-        bTree = new BTree<>(bTree, index + 2, bTree.getMaxIndex(index));
+        BTree<T> newHead = new BTree<>(takeLatestVersion(), index);
+        undoStack.push(newHead);
+        redoStack.clear();
 
 
         boolean modified = false;
 
         for (T e : c) {
-            if (bTree.add(e)) modified = true;
+            if (newHead.add(e)) modified = true;
         }
 
         for (int i = index; i < oldHead.getSize(); i++) {
-            bTree.add(oldHead.get(i));
+            newHead.add(oldHead.get(i));
         }
 
         return modified;
@@ -166,7 +263,7 @@ public class PersistentArray<T> implements List<T> {
     public boolean remove(Object o) {
         int indexOfElementToDelete = indexOf(o);
 
-        if(indexOfElementToDelete == -1){
+        if (indexOfElementToDelete == -1) {
             return false;
         }
 
@@ -191,7 +288,7 @@ public class PersistentArray<T> implements List<T> {
             throw new NullPointerException();
         }
 
-        BTree<T> bTree = this.bTree;
+        BTree<T> bTree = takeLatestVersion();
         for (int i = 0; i < bTree.getSize(); i++) {
             T element = bTree.get(i);
             if (o.equals(element)) {
@@ -208,8 +305,8 @@ public class PersistentArray<T> implements List<T> {
             throw new NullPointerException();
         }
 
-        BTree<T> bTree = this.bTree;
-        for (int i = bTree.getSize() -1 ; i >= 0; i--) {
+        BTree<T> bTree = takeLatestVersion();
+        for (int i = bTree.getSize() - 1; i >= 0; i--) {
             T element = bTree.get(i);
             if (o.equals(element)) {
                 return i;
@@ -231,7 +328,7 @@ public class PersistentArray<T> implements List<T> {
 
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
-        if(fromIndex < 0 || toIndex > bTree.getSize() || fromIndex > toIndex) {
+        if (fromIndex < 0 || toIndex > takeLatestVersion().getSize() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();
         }
         return null;
@@ -264,11 +361,11 @@ public class PersistentArray<T> implements List<T> {
     public class PersistentArrayIteratorList<T> implements ListIterator<T> {
         int index;
 
-        public PersistentArrayIteratorList(){
+        public PersistentArrayIteratorList() {
             index = 0;
         }
 
-        public PersistentArrayIteratorList (int index){
+        public PersistentArrayIteratorList(int index) {
             this.index = index;
         }
 
@@ -279,7 +376,7 @@ public class PersistentArray<T> implements List<T> {
 
         @Override
         public T next() {
-            if(!hasNext()){
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
             return (T) PersistentArray.this.get(index++);
@@ -292,7 +389,7 @@ public class PersistentArray<T> implements List<T> {
 
         @Override
         public T previous() {
-            if(!hasPrevious()){
+            if (!hasPrevious()) {
                 throw new NoSuchElementException();
             }
             return (T) PersistentArray.this.get(--index);
@@ -322,5 +419,9 @@ public class PersistentArray<T> implements List<T> {
         public void add(T t) {
             //PersistentArray.this.add(t);
         }
+    }
+
+    private BTree<T> takeLatestVersion() {
+        return this.undoStack.peek();
     }
 }
