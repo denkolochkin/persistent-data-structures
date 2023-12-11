@@ -270,4 +270,109 @@ class PersistentLinkedListTest {
         assertEquals("[1, 2, 3]", persistentLinkedList.toString());
         assertEquals(3, persistentLinkedList.size());
     }
+
+    @Test
+    void undoRedoTest() {
+        persistentLinkedList.add(0);
+        persistentLinkedList.add(1);
+        persistentLinkedList.add(2);
+
+        assertEquals("[0, 1, 2]", persistentLinkedList.toString());
+
+        persistentLinkedList.add(3);
+
+        assertEquals("[0, 1, 2, 3]", persistentLinkedList.toString());
+
+        persistentLinkedList.undo();
+
+        assertEquals("[0, 1, 2]", persistentLinkedList.toString());
+
+        persistentLinkedList.redo();
+
+        assertEquals("[0, 1, 2, 3]", persistentLinkedList.toString());
+
+        persistentLinkedList.set(1, -1);
+
+        assertEquals("[0, -1, 2, 3]", persistentLinkedList.toString());
+
+        persistentLinkedList.undo();
+
+        assertEquals("[0, 1, 2, 3]", persistentLinkedList.toString());
+
+        persistentLinkedList.redo();
+
+        assertEquals("[0, -1, 2, 3]", persistentLinkedList.toString());
+
+        persistentLinkedList.remove(2);
+
+        assertEquals("[0, -1, 3]", persistentLinkedList.toString());
+
+        persistentLinkedList.undo();
+
+        assertEquals("[0, -1, 2, 3]", persistentLinkedList.toString());
+
+        persistentLinkedList.redo();
+
+        assertEquals("[0, -1, 3]", persistentLinkedList.toString());
+    }
+
+    @Test
+    void removeAllAndUndoRedoTest() {
+        persistentLinkedList.add(0);
+        persistentLinkedList.add(1);
+        persistentLinkedList.add(2);
+
+        assertEquals("[0, 1, 2]", persistentLinkedList.toString());
+
+        persistentLinkedList.remove(0);
+        persistentLinkedList.remove(0);
+        persistentLinkedList.remove(0);
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+
+        assertEquals("[0, 1, 2]", persistentLinkedList.toString());
+
+        persistentLinkedList.remove(0);
+        persistentLinkedList.remove(0);
+        persistentLinkedList.remove(0);
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        persistentLinkedList.add(-1);
+        persistentLinkedList.add(-2);
+        persistentLinkedList.add(-3);
+
+        assertEquals("[-1, -2, -3]", persistentLinkedList.toString());
+
+        persistentLinkedList.remove(0);
+        persistentLinkedList.remove(0);
+        persistentLinkedList.remove(0);
+
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+        persistentLinkedList.redo();
+        persistentLinkedList.redo();
+        persistentLinkedList.redo();
+
+        assertTrue(persistentLinkedList.isEmpty());
+    }
+
+    @Test
+    void copyConstructorTest() {
+        persistentLinkedList.add(0);
+        persistentLinkedList.add(1);
+        persistentLinkedList.add(2);
+
+        PersistentLinkedList<Integer> newList = new PersistentLinkedList<>(persistentLinkedList);
+
+        assertEquals(persistentLinkedList.toString(), newList.toString());
+        assertEquals(persistentLinkedList.size(), newList.size());
+        assertEquals(persistentLinkedList.getVersionCount(), newList.getVersionCount());
+        assertEquals(persistentLinkedList.getCurrentHead(), newList.getCurrentHead());
+    }
 }

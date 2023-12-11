@@ -1,6 +1,7 @@
 package ru.nsu.fit.list;
 
 import javafx.util.Pair;
+import ru.nsu.fit.Interfaces.UndoRedoInterface;
 import ru.nsu.fit.util.Constants;
 import ru.nsu.fit.util.node.Node;
 import ru.nsu.fit.util.tree.BTree;
@@ -17,15 +18,30 @@ import java.util.Stack;
 /**
  * Персистентный двусвязный список.
  */
-public class PersistentLinkedList<E> implements List<E> {
+public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
     private final BTree<E> bTree;
-    private final Stack<ListHead<ListItem<E>>> storage = new Stack<>();
+
+    private final Stack<ListHead<ListItem<E>>> redo = new Stack<>();
+    private final Stack<ListHead<ListItem<E>>> undo = new Stack<>();
+
+    private final Stack<PersistentLinkedList<?>> undoValues = new Stack<>();
+    private final Stack<PersistentLinkedList<?>> redoValues = new Stack<>();
+
+    private PersistentLinkedList<PersistentLinkedList<?>> parent;
 
     public PersistentLinkedList() {
         this.bTree = new BTree<>(2, 6);
         ListHead<ListItem<E>> head = new ListHead<>();
-        storage.push(head);
+        undo.push(head);
+        redo.clear();
+    }
+
+    public PersistentLinkedList(PersistentLinkedList<E> other) {
+        this.undo.addAll(other.undo);
+        this.redo.addAll(other.redo);
+        this.bTree = new BTree<>(other.size());
+        this.parent = other.parent;
     }
 
     /**
@@ -97,7 +113,8 @@ public class PersistentLinkedList<E> implements List<E> {
             }
         }
 
-        storage.push(newHead);
+        undo.push(newHead);
+        redo.clear();
 
         return true;
     }
@@ -158,7 +175,9 @@ public class PersistentLinkedList<E> implements List<E> {
             }
         }
 
-        storage.push(newHead);
+        undo.push(newHead);
+        redo.clear();
+        parentUndo(element);
 
         ListItem<E> listElement = new ListItem<>(element, indexBefore, indexAfter);
 
@@ -192,7 +211,8 @@ public class PersistentLinkedList<E> implements List<E> {
     @Override
     public void clear() {
         ListHead<ListItem<E>> head = new ListHead<>();
-        storage.push(head);
+        undo.push(head);
+        redo.clear();
     }
 
     /**
@@ -268,6 +288,31 @@ public class PersistentLinkedList<E> implements List<E> {
     }
 
     @Override
+    public void undo() {
+        if (!undoValues.empty()) {
+            undoValues.peek().undo();
+            redoValues.push(undoValues.pop());
+        } else {
+            if (!undo.empty()) {
+                redo.push(undo.pop());
+            }
+        }
+    }
+
+    @Override
+    public void redo() {
+        if (!redoValues.empty()) {
+            redoValues.peek().redo();
+            undoValues.push(redoValues.pop());
+        } else {
+            if (!redo.empty()) {
+                undo.push(redo.pop());
+            }
+        }
+    }
+
+
+    @Override
     public int size() {
         return size(getCurrentHead());
     }
@@ -277,7 +322,7 @@ public class PersistentLinkedList<E> implements List<E> {
     }
 
     public ListHead<ListItem<E>> getCurrentHead() {
-        return this.storage.peek();
+        return this.undo.peek();
     }
 
     public boolean isFull() {
@@ -290,7 +335,7 @@ public class PersistentLinkedList<E> implements List<E> {
     }
 
     public int getVersionCount() {
-        return storage.size();
+        return undo.size() + redo.size();
     }
 
     private E set(ListHead<ListItem<E>> head, int index, E element) {
@@ -307,7 +352,9 @@ public class PersistentLinkedList<E> implements List<E> {
         newNode.setValue(element);
         copy.getValue().set(leafIndex, newNode);
 
-        storage.push(newHead);
+        undo.push(newHead);
+        redo.clear();
+        parentUndo(element);
 
         return result;
     }
@@ -322,7 +369,8 @@ public class PersistentLinkedList<E> implements List<E> {
         E result = get(index);
 
         if (prevHead.getSize() == 1) {
-            storage.push(new ListHead<>());
+            undo.push(new ListHead<>());
+            redo.clear();
             return result;
         }
 
@@ -410,7 +458,19 @@ public class PersistentLinkedList<E> implements List<E> {
 
     private void finishRemove(ListHead<ListItem<E>> newHead) {
         newHead.setSize(newHead.getSize() - 1);
-        storage.push(newHead);
+        undo.push(newHead);
+        redo.clear();
+    }
+
+    private void parentUndo(E value) {
+        if (value instanceof PersistentLinkedList) {
+            //noinspection rawtypes
+            ((PersistentLinkedList) value).parent = this;
+        }
+
+        if (parent != null) {
+            parent.undoValues.push(this);
+        }
     }
 
     private int getTreeIndex(int listIndex) {
