@@ -37,6 +37,13 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         redo.clear();
     }
 
+    public PersistentLinkedList(PersistentLinkedList<E> other) {
+        this.undo.addAll(other.undo);
+        this.redo.addAll(other.redo);
+        this.bTree = new BTree<>(other.size());
+        this.parent = other.parent;
+    }
+
     /**
      * Замена элемента по индексу.
      *

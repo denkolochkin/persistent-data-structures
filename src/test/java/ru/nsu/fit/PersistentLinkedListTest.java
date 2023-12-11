@@ -361,4 +361,18 @@ class PersistentLinkedListTest {
 
         assertTrue(persistentLinkedList.isEmpty());
     }
+
+    @Test
+    void copyConstructorTest() {
+        persistentLinkedList.add(0);
+        persistentLinkedList.add(1);
+        persistentLinkedList.add(2);
+
+        PersistentLinkedList<Integer> newList = new PersistentLinkedList<>(persistentLinkedList);
+
+        assertEquals(persistentLinkedList.toString(), newList.toString());
+        assertEquals(persistentLinkedList.size(), newList.size());
+        assertEquals(persistentLinkedList.getVersionCount(), newList.getVersionCount());
+        assertEquals(persistentLinkedList.getCurrentHead(), newList.getCurrentHead());
+    }
 }
