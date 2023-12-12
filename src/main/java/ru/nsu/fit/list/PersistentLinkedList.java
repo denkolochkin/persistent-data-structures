@@ -25,11 +25,6 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
     private final Stack<ListHead<ListItem<E>>> redo = new Stack<>();
     private final Stack<ListHead<ListItem<E>>> undo = new Stack<>();
 
-    private final Stack<PersistentLinkedList<?>> undoValues = new Stack<>();
-    private final Stack<PersistentLinkedList<?>> redoValues = new Stack<>();
-
-    private PersistentLinkedList<PersistentLinkedList<?>> parent;
-
     public PersistentLinkedList() {
         this.bTree = new BTree<>(2, 6);
         ListHead<ListItem<E>> head = new ListHead<>();
@@ -41,7 +36,6 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         this.undo.addAll(other.undo);
         this.redo.addAll(other.redo);
         this.bTree = new BTree<>(other.size());
-        this.parent = other.parent;
     }
 
     /**
@@ -177,7 +171,6 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
         undo.push(newHead);
         redo.clear();
-        parentUndo(element);
 
         ListItem<E> listElement = new ListItem<>(element, indexBefore, indexAfter);
 
@@ -289,25 +282,15 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
     @Override
     public void undo() {
-        if (!undoValues.empty()) {
-            undoValues.peek().undo();
-            redoValues.push(undoValues.pop());
-        } else {
-            if (!undo.empty()) {
-                redo.push(undo.pop());
-            }
+        if (!undo.empty()) {
+            redo.push(undo.pop());
         }
     }
 
     @Override
     public void redo() {
-        if (!redoValues.empty()) {
-            redoValues.peek().redo();
-            undoValues.push(redoValues.pop());
-        } else {
-            if (!redo.empty()) {
-                undo.push(redo.pop());
-            }
+        if (!redo.empty()) {
+            undo.push(redo.pop());
         }
     }
 
@@ -354,7 +337,6 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
         undo.push(newHead);
         redo.clear();
-        parentUndo(element);
 
         return result;
     }
@@ -460,17 +442,6 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         newHead.setSize(newHead.getSize() - 1);
         undo.push(newHead);
         redo.clear();
-    }
-
-    private void parentUndo(E value) {
-        if (value instanceof PersistentLinkedList) {
-            //noinspection rawtypes
-            ((PersistentLinkedList) value).parent = this;
-        }
-
-        if (parent != null) {
-            parent.undoValues.push(this);
-        }
     }
 
     private int getTreeIndex(int listIndex) {
