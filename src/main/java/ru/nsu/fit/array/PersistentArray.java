@@ -2,7 +2,7 @@ package ru.nsu.fit.array;
 
 
 import ru.nsu.fit.Interfaces.UndoRedoInterface;
-import ru.nsu.fit.util.tree.BTree;
+import ru.nsu.fit.util.BTree;
 
 import java.util.*;
 

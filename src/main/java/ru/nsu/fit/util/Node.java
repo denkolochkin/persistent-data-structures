@@ -1,4 +1,4 @@
-package ru.nsu.fit.util.node;
+package ru.nsu.fit.util;
 
 import lombok.Getter;
 import lombok.Setter;

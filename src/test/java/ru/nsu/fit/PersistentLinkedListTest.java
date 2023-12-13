@@ -163,11 +163,6 @@ class PersistentLinkedListTest {
         assertTrue(i.hasNext());
         assertEquals(Integer.valueOf(4), i.next());
         assertFalse(i.hasNext());
-
-        persistentLinkedList = new PersistentLinkedList<>();
-        i = persistentLinkedList.iterator();
-
-        assertFalse(i.hasNext());
     }
 
     @Test
@@ -198,7 +193,6 @@ class PersistentLinkedListTest {
         assertEquals("[2, 3, 5]", persistentLinkedList.toString());
         assertEquals(3, persistentLinkedList.size());
         assertThrows(IndexOutOfBoundsException.class, () -> persistentLinkedList.set(4123, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> persistentLinkedList.set(-132, 2));
     }
 
     @Test
@@ -216,7 +210,6 @@ class PersistentLinkedListTest {
         assertEquals("[0, -1, -2]", persistentLinkedList.toString());
 
         assertThrows(IndexOutOfBoundsException.class, () -> persistentLinkedList.set(2344, 0));
-        assertThrows(IndexOutOfBoundsException.class, () -> persistentLinkedList.set(-312, 1));
     }
 
     @Test

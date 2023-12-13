@@ -1,10 +1,9 @@
-package ru.nsu.fit.util.tree;
+package ru.nsu.fit.util;
 
 import javafx.util.Pair;
 import lombok.Getter;
 import ru.nsu.fit.list.ListHead;
 import ru.nsu.fit.list.ListItem;
-import ru.nsu.fit.util.node.Node;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
