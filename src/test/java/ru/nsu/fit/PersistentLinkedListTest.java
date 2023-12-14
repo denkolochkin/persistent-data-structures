@@ -243,6 +243,22 @@ class PersistentLinkedListTest {
         persistentLinkedList.set(1, 9);
 
         assertEquals("[0, 9]", persistentLinkedList.toString());
+
+        persistentLinkedList.add(10);
+
+        assertEquals("[0, 9, 10]", persistentLinkedList.toString());
+
+        persistentLinkedList.set(0, 1);
+        persistentLinkedList.set(1, 1);
+        persistentLinkedList.set(2, 1);
+
+        assertEquals("[1, 1, 1]", persistentLinkedList.toString());
+
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+
+        assertEquals("[0, 9, 10]", persistentLinkedList.toString());
     }
 
     @Test
