@@ -14,7 +14,7 @@ public class ListHead<T> extends BTree<T> {
     private int last = -1;
 
     public ListHead() {
-        super(2,4);
+        super(1,4);
     }
 
     public void copy(ListHead<T> other) {

@@ -342,8 +342,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         if (mid.getPrev() == -1) {
             int treeNextIndex = getTreeIndex(nextIndex);
 
-            //newHead.copyLeaf(newHead, nextIndex);
-            newHead.findNode(nextIndex);
+            //newHead.findNode(nextIndex);
 
             ListItem<E> next = getElement(newHead, nextIndex);
             ListItem<E> newNext = new ListItem<>(next);
@@ -351,6 +350,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
             //Pair<Node<ListItem<E>>, Integer> leafNext = newHead.getLeaf(newHead, treeNextIndex);
             //leafNext.getKey().getValue().set(treeNextIndex & newHead.getMask(), newNext);
+
             newHead.set(treeNextIndex, newNext);
 
             newHead.setFirst(treeNextIndex);
@@ -363,9 +363,6 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         if (mid.getNext() == -1) {
             int treePrevIndex = getTreeIndex(prevIndex);
 
-            //newHead.copyLeaf(newHead, prevIndex);
-            newHead.findNode(prevIndex);
-
             ListItem<E> prev = getElement(newHead, prevIndex);
 
             ListItem<E> newPrev = new ListItem<>(prev);
@@ -373,8 +370,6 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
             //Pair<Node<ListItem<E>>, Integer> leafPrev = newHead.getLeaf(newHead, treePrevIndex);
             //leafPrev.getKey().getValue().set(treePrevIndex & newHead.getMask(), newPrev);
-
-            newHead.set(treePrevIndex, newPrev);
 
             newHead.set(treePrevIndex, newPrev);
 
@@ -391,7 +386,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         newHead = new ListHead<>(prevHead);
         //newHead.copyLeaf(newHead, nextIndex);
 
-        newHead.findNode(nextIndex);
+        //newHead.findNode(nextIndex);
 
         ListItem<E> next = getElement(newHead, nextIndex);
         ListItem<E> newNext = new ListItem<>(next);
@@ -406,7 +401,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         newHead = new ListHead<>(newHead);
         //newHead.copyLeaf(newHead, prevIndex);
 
-        newHead.findNode(prevIndex);
+        //newHead.findNode(prevIndex);
 
         ListItem<E> prev = getElement(newHead, prevIndex);
 
@@ -475,8 +470,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
     }
 
     private boolean isFull(ListHead<ListItem<E>> head) {
-        return head.getTrueSize() >= head.getMaxSize();
-        //return false;
+        //return head.getTrueSize() >= head.getMaxSize();
+        return false;
     }
 
     /**

@@ -384,4 +384,46 @@ class PersistentLinkedListTest {
         assertEquals(persistentLinkedList.getVersionCount(), newList.getVersionCount());
         assertEquals(persistentLinkedList.getCurrentHead(), newList.getCurrentHead());
     }
+
+    @Test
+    void bigTest(){
+        int number_of_ints = 1000;
+        for(int i = 0;i < number_of_ints;i++){
+            persistentLinkedList.add(i);
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for(int i=0; i< number_of_ints;i++){
+            assertEquals(i, persistentLinkedList.get(i));
+        }
+
+        for(int i=0; i < number_of_ints;i++){
+            persistentLinkedList.undo();
+        }
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        for(int i=0;i <number_of_ints;i++){
+            persistentLinkedList.redo();
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for(int i=0; i< number_of_ints;i++){
+            assertEquals(i, persistentLinkedList.get(i));
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for(int i=0; i< number_of_ints;i++){
+            assertEquals(i, persistentLinkedList.remove(0));
+        }
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        for(int i=0; i< number_of_ints;i++){
+            persistentLinkedList.undo();
+        }
+    }
 }

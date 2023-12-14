@@ -28,7 +28,7 @@ public class BTree<E> {
     }
 
     public BTree(int size) {
-        initialization((int) Math.ceil(Math.log(size) / Math.log( (int) Math.pow(2, bits))), bits);
+        initialization((int) Math.ceil(Math.log(size) / Math.log((int) Math.pow(2, bits))), bits);
         this.root = new Node<>();
     }
 
@@ -36,13 +36,13 @@ public class BTree<E> {
         this.depth = depth;
         this.bits = bits;
 
-        initialization((int) Math.ceil(Math.log(size) / Math.log( (int) Math.pow(2, bits))), bits);
+        initialization(depth, bits);
 
         this.root = new Node<>();
     }
 
     public BTree(BTree<E> other) {
-        initialization(other.depth,other.bits);
+        initialization(other.depth, other.bits);
         this.root = new Node<>(other.root);
         this.size = other.size;
         this.width = other.width;
@@ -51,7 +51,7 @@ public class BTree<E> {
     }
 
     public BTree(BTree<E> other, Integer newSize) {
-        initialization(other.depth,other.bits);
+        initialization(other.depth, other.bits);
         this.root = other.createSubTree(newSize);
         this.size = newSize;
         this.trueSize = newSize;
@@ -59,16 +59,16 @@ public class BTree<E> {
 
     protected void initialization(int depth, int bits) {
         this.bits = bits;
-        if(depth > 0) {
+        if (depth > 0) {
             this.depth = depth;
-        }else{
+        } else {
             this.depth = 1;
         }
 
         updateInformationAboutTree();
     }
 
-    private void updateInformationAboutTree(){
+    private void updateInformationAboutTree() {
         mask = (int) Math.pow(2, bits) - 1;
         maxSize = (int) Math.pow(2, bits * depth);
         width = (int) Math.pow(2, bits);
@@ -83,11 +83,11 @@ public class BTree<E> {
         return String.format("%20x %d", root.hashCode(), size);
     }
 
-    private void increaseDepthOfTree(){
+    private void increaseDepthOfTree() {
         Node<E> newNode = new Node<>();
-        if(root.getValue() == null) {
+        if (root.getValue() == null) {
             newNode.setChild(root.getChild());
-        }else{
+        } else {
             newNode.setValue(root.getValue());
             root.setValue(null);
         }
@@ -102,7 +102,7 @@ public class BTree<E> {
         size++;
         trueSize++;
 
-        if(size > maxSize){
+        if (size > maxSize) {
             increaseDepthOfTree();
         }
 
@@ -139,7 +139,7 @@ public class BTree<E> {
         return true;
     }
 
-    public boolean add(int index, E element){
+    public boolean add(int index, E element) {
         findNode(index).getValue().set(index & mask, element);
 
         return true;
@@ -159,7 +159,7 @@ public class BTree<E> {
         foundNode.getValue().set(index & mask, element);
     }
 
-    public void remove(int index){
+    public void remove(int index) {
         findNode(index).getValue().remove(index & mask);
 
         size--;
@@ -200,7 +200,7 @@ public class BTree<E> {
     }
 
     public E get(int index) {
-        if(index < 0 || index >= trueSize){
+        if (index < 0 || index >= trueSize) {
             throw new IndexOutOfBoundsException();
         }
 
