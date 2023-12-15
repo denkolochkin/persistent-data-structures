@@ -1,15 +1,10 @@
 package ru.nsu.fit.list;
 
 import ru.nsu.fit.Interfaces.UndoRedoInterface;
-import ru.nsu.fit.util.Constants;
+import ru.nsu.fit.util.ListHead;
+import ru.nsu.fit.util.ListItem;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Stack;
+import java.util.*;
 
 import static java.util.Objects.isNull;
 
@@ -17,31 +12,29 @@ import static java.util.Objects.isNull;
  * Персистентный двусвязный список.
  */
 public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
-
-    private final Stack<ListHead<ListItem<E>>> redo = new Stack<>();
-    private final Stack<ListHead<ListItem<E>>> undo = new Stack<>();
+    private final Stack<ListHead<ListItem<E>>> redoStack = new Stack<>();
+    private final Stack<ListHead<ListItem<E>>> undoStack = new Stack<>();
 
     public PersistentLinkedList() {
         ListHead<ListItem<E>> head = new ListHead<>();
-        undo.push(head);
-        redo.clear();
+        updateUndoRedoStack(head);
     }
 
     public PersistentLinkedList(PersistentLinkedList<E> other) {
-        this.undo.addAll(other.undo);
-        this.redo.addAll(other.redo);
+        this.undoStack.addAll(other.undoStack);
+        this.redoStack.addAll(other.redoStack);
     }
 
     /**
      * Замена элемента по индексу.
      *
-     * @param index индекс элемента.
+     * @param index   индекс элемента.
      * @param element новый элемент.
      * @return замененный элемент.
      */
     @Override
     public E set(int index, E element) {
-        return set(getCurrentHead(), index, element);
+        return set(takeLatestVersion(), index, element);
     }
 
     /**
@@ -52,39 +45,34 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public boolean add(E element) {
-        if (isFull()) {
-            return false;
-        }
-
         ListItem<E> listElement;
-        ListHead<ListItem<E>> prevHead = getCurrentHead();
+        ListHead<ListItem<E>> prevHead = takeLatestVersion();
         ListHead<ListItem<E>> newHead;
 
-        if (getCurrentHead().isEmpty()) {
+        if (prevHead.isEmpty()) {
             newHead = new ListHead<>();
-            newHead.setFirst(0);
-            newHead.setLast(0);
+            newHead.setFirstIndex(0);
+            newHead.setLastIndex(0);
             listElement = new ListItem<>(element, -1, -1);
             newHead.add(listElement);
         } else {
-            listElement = new ListItem<>(element, prevHead.getLast(), -1);
+            listElement = new ListItem<>(element, prevHead.getLastIndex(), -1);
 
             newHead = new ListHead<>(prevHead);
 
-            ListItem<E> elem = newHead.get(prevHead.getLast());
+            ListItem<E> item = newHead.get(prevHead.getLastIndex());
 
-            ListItem<E> last = new ListItem<>(elem);
+            ListItem<E> last = new ListItem<>(item);
 
-            last.setNext(newHead.getActualSize());
+            last.setNextIndex(newHead.getActualSize());
 
-            newHead.set(prevHead.getLast(), last);
+            newHead.set(prevHead.getLastIndex(), last);
 
-            newHead.setLast(newHead.getActualSize());
+            newHead.setLastIndex(newHead.getActualSize());
             newHead.add(listElement);
         }
 
-        undo.push(newHead);
-        redo.clear();
+        updateUndoRedoStack(newHead);
 
         return true;
     }
@@ -94,16 +82,12 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      * Сдвигает элемент, находящийся в данный момент в этой позиции (если есть),
      * и любые последующие элементы вправо (+1 к индексам).
      *
-     * @param index индекс вставки.
+     * @param index   индекс вставки.
      * @param element новый элемент.
      */
     @Override
     public void add(int index, E element) {
-        if (isFull()) {
-            throw new IllegalStateException(Constants.FULL_LIST_MESSAGE);
-        }
-
-        ListHead<ListItem<E>> prevHead = getCurrentHead();
+        ListHead<ListItem<E>> prevHead = takeLatestVersion();
         ListHead<ListItem<E>> newHead = null;
 
         int indexBefore = -1;
@@ -123,7 +107,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
                 newHead = new ListHead<>(prevHead);
                 beforeElement = new ListItem<>(newHead.get(indexBefore));
 
-                beforeElement.setNext(freeIndex);
+                beforeElement.setNextIndex(freeIndex);
                 newHead.set(indexBefore, beforeElement);
             }
 
@@ -138,23 +122,22 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
                 newHead = new ListHead<>(head);
 
                 afterElement = new ListItem<>(newHead.get(indexAfter));
-                afterElement.setPrev(freeIndex);
+                afterElement.setPrevIndex(freeIndex);
                 newHead.set(indexAfter, afterElement);
             }
         }
 
-        undo.push(newHead);
-        redo.clear();
-
         ListItem<E> listElement = new ListItem<>(element, indexBefore, indexAfter);
 
         if (indexBefore == -1 && !isNull(newHead)) {
-            newHead.setFirst(freeIndex);
+            newHead.setFirstIndex(freeIndex);
         }
 
         if (!isNull(newHead)) {
             newHead.add(listElement);
         }
+
+        updateUndoRedoStack(newHead);
     }
 
     /**
@@ -166,7 +149,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public E remove(int index) {
-        return remove(getCurrentHead(), index);
+        return remove(takeLatestVersion(), index);
     }
 
     /**
@@ -175,19 +158,18 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
     @Override
     public void clear() {
         ListHead<ListItem<E>> head = new ListHead<>();
-        undo.push(head);
-        redo.clear();
+        updateUndoRedoStack(head);
     }
 
     /**
      * Получение элемента по индексу.
-     * @param index индекс элемента.
      *
+     * @param index индекс элемента.
      * @return найденный элемент.
      */
     @Override
     public E get(int index) {
-        return get(getCurrentHead(), index);
+        return get(takeLatestVersion(), index);
     }
 
     /**
@@ -197,14 +179,13 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public String toString() {
-        ListHead<ListItem<E>> currentHead = getCurrentHead();
+        ListHead<ListItem<E>> currentHead = takeLatestVersion();
 
         if (currentHead.isEmpty()) {
             return currentHead.toString();
         }
 
         return Arrays.toString(toArray(currentHead));
-
     }
 
     /**
@@ -214,7 +195,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public Object[] toArray() {
-        return toArray(getCurrentHead());
+        return toArray(takeLatestVersion());
     }
 
     /**
@@ -227,7 +208,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         int i = 0;
 
         public PersistentListIterator() {
-            this(getCurrentHead());
+            this(takeLatestVersion());
         }
 
         public PersistentListIterator(ListHead<ListItem<E>> head) {
@@ -236,7 +217,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
                 return;
             }
 
-            current = head.get(head.getFirst());
+            current = head.get(head.getFirstIndex());
         }
 
         /**
@@ -264,7 +245,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
                 return result;
             }
 
-            current = head.get(current.getNext());
+            current = head.get(current.getNextIndex());
 
             return result;
         }
@@ -275,8 +256,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public void undo() {
-        if (!undo.empty()) {
-            redo.push(undo.pop());
+        if (!undoStack.empty()) {
+            redoStack.push(undoStack.pop());
         }
     }
 
@@ -285,8 +266,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public void redo() {
-        if (!redo.empty()) {
-            undo.push(redo.pop());
+        if (!redoStack.empty()) {
+            undoStack.push(redoStack.pop());
         }
     }
 
@@ -297,7 +278,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public int size() {
-        return getHeadSize(getCurrentHead());
+        return getHeadSize(takeLatestVersion());
     }
 
     /**
@@ -305,17 +286,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      *
      * @return актуальная голова списка.
      */
-    public ListHead<ListItem<E>> getCurrentHead() {
-        return this.undo.peek();
-    }
-
-    /**
-     * Проверка на полноту списка.
-     *
-     * @return true, если список полон.
-     */
-    public boolean isFull() {
-        return isFull(getCurrentHead());
+    public ListHead<ListItem<E>> takeLatestVersion() {
+        return this.undoStack.peek();
     }
 
     /**
@@ -325,7 +297,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public boolean isEmpty() {
-        return getCurrentHead().isEmpty();
+        return takeLatestVersion().isEmpty();
     }
 
     /**
@@ -334,7 +306,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      * @return число версий списка.
      */
     public int getVersionCount() {
-        return undo.size() + redo.size();
+        return undoStack.size() + redoStack.size();
     }
 
     private E set(ListHead<ListItem<E>> head, int index, E element) {
@@ -346,24 +318,17 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         newNode.setValue(element);
         newHead.set(getTreeIndex(index), newNode);
 
-        undo.push(newHead);
-        redo.clear();
+        updateUndoRedoStack(newHead);
 
         return result;
     }
 
     private E remove(ListHead<ListItem<E>> prevHead, int index) {
-        if (isFull()) {
-            throw new IllegalStateException(Constants.FULL_LIST_MESSAGE);
-        }
-
         ListHead<ListItem<E>> newHead;
         E result = get(index);
 
         if (prevHead.getSize() == 1) {
-            undo.push(new ListHead<>());
-            redo.clear();
-
+            updateUndoRedoStack(new ListHead<>());
             return result;
         }
 
@@ -374,77 +339,66 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         int prevIndex = index - 1;
         newHead = new ListHead<>(prevHead);
 
-        if (mid.getPrev() == -1) {
+        if (mid.getPrevIndex() == -1) {
             int treeNextIndex = getTreeIndex(nextIndex);
 
             ListItem<E> next = getElement(newHead, nextIndex);
             ListItem<E> newNext = new ListItem<>(next);
-            newNext.setPrev(-1);
+            newNext.setPrevIndex(-1);
 
             newHead.set(treeNextIndex, newNext);
-            newHead.setFirst(treeNextIndex);
+            newHead.setFirstIndex(treeNextIndex);
+        }else
 
-            finishRemove(newHead);
-
-            return result;
-        }
-
-        if (mid.getNext() == -1) {
+        if (mid.getNextIndex() == -1) {
             int treePrevIndex = getTreeIndex(prevIndex);
 
             ListItem<E> prev = getElement(newHead, prevIndex);
             ListItem<E> newPrev = new ListItem<>(prev);
 
-            newPrev.setNext(-1);
+            newPrev.setNextIndex(-1);
 
             newHead.set(treePrevIndex, newPrev);
-            newHead.setLast(treePrevIndex);
+            newHead.setLastIndex(treePrevIndex);
+        }else {
 
-            finishRemove(newHead);
+            int treeNextIndex = getTreeIndex(nextIndex);
+            int treePrevIndex = getTreeIndex(prevIndex);
 
-            return result;
+            newHead = new ListHead<>(prevHead);
+
+            ListItem<E> next = getElement(newHead, nextIndex);
+            ListItem<E> newNext = new ListItem<>(next);
+
+            newNext.setPrevIndex(mid.getPrevIndex());
+            newHead.set(treeNextIndex, newNext);
+
+            newHead = new ListHead<>(newHead);
+
+            ListItem<E> prev = getElement(newHead, prevIndex);
+            ListItem<E> newPrev = new ListItem<>(prev);
+
+            newPrev.setNextIndex(mid.getNextIndex());
+
+            newHead.set(treePrevIndex, newPrev);
         }
 
-        int treeNextIndex = getTreeIndex(nextIndex);
-        int treePrevIndex = getTreeIndex(prevIndex);
+        newHead.setSize(newHead.getSize() - 1);
 
-        newHead = new ListHead<>(prevHead);
-
-        ListItem<E> next = getElement(newHead, nextIndex);
-        ListItem<E> newNext = new ListItem<>(next);
-
-        newNext.setPrev(mid.getPrev());
-        newHead.set(treeNextIndex, newNext);
-
-        newHead = new ListHead<>(newHead);
-
-        ListItem<E> prev = getElement(newHead, prevIndex);
-        ListItem<E> newPrev = new ListItem<>(prev);
-
-        newPrev.setNext(mid.getNext());
-
-        newHead.set(treePrevIndex, newPrev);
-
-        finishRemove(newHead);
+        updateUndoRedoStack(newHead);
 
         return result;
     }
 
-    private void finishRemove(ListHead<ListItem<E>> newHead) {
-        newHead.setSize(newHead.getSize() - 1);
-        undo.push(newHead);
-        redo.clear();
-    }
-
     private int getTreeIndex(int listIndex) {
-        return getTreeIndex(getCurrentHead(), listIndex);
+        return getTreeIndex(takeLatestVersion(), listIndex);
     }
 
     private int getTreeIndex(ListHead<ListItem<E>> head, int index) {
-        int trueIndex = head.getFirst();
+        int trueIndex = head.getFirstIndex();
 
         for (int i = 0; i < index; i++) {
-            trueIndex = head.get(trueIndex).getNext();
+            trueIndex = head.get(trueIndex).getNextIndex();
         }
 
         return trueIndex;
@@ -455,23 +409,13 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
     }
 
     private E get(ListHead<ListItem<E>> head, int index) {
-        if (index == 0) {
-            return getValue(head, head.getFirst()).getValue();
-        } else if (index == head.getSize() - 1) {
-            return getValue(head, head.getLast()).getValue();
-        } else {
-            return getElement(head, index).getValue();
-        }
+        return getElement(head, index).getValue();
     }
 
     private ListItem<E> getElement(ListHead<ListItem<E>> head, int index) {
         int treeIndex = getTreeIndex(index);
 
         return head.get(treeIndex);
-    }
-
-    private ListItem<E> getValue(ListHead<ListItem<E>> head, int index) {
-        return head.get(index);
     }
 
     private Object[] toArray(ListHead<ListItem<E>> head) {
@@ -484,8 +428,9 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         return objects;
     }
 
-    private boolean isFull(ListHead<ListItem<E>> head) {
-        return head.getActualSize() > head.getMaxSize();
+    private void updateUndoRedoStack(ListHead<ListItem<E>> head){
+        undoStack.push(head);
+        redoStack.clear();
     }
 
     /**

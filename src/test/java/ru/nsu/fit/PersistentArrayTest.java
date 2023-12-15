@@ -133,7 +133,7 @@ class PersistentArrayTest {
         assertEquals("[[[1], [2], [3]], [[11], [22], [33]], [[111], [222], [333, 444]]]", persistentArrayrent.toString());
         childtest = persistentArrayrent.remove(0);
         assertEquals("[[[11], [22], [33]], [[111], [222], [333, 444]]]", persistentArrayrent.toString());
-        persistentArrayrent.add(0,childtest);
+        persistentArrayrent.add(0, childtest);
         assertEquals("[[[1], [2], [3]], [[11], [22], [33]], [[111], [222], [333, 444]]]", persistentArrayrent.toString());
     }
 
@@ -179,9 +179,9 @@ class PersistentArrayTest {
 
         i.remove();
 
-        assertEquals("[1, 3]",persistentArray.toString());
+        assertEquals("[1, 3]", persistentArray.toString());
 
-        assertEquals("3",i.next());
+        assertEquals("3", i.next());
 
 
     }
@@ -302,7 +302,7 @@ class PersistentArrayTest {
         assertEquals(1, persistentArray.indexOf("2"));
         assertEquals(0, persistentArray.indexOf("1"));
         assertEquals(-1, persistentArray.indexOf("11"));
-        assertThrows(NullPointerException.class, ()->persistentArray.indexOf(null));
+        assertThrows(NullPointerException.class, () -> persistentArray.indexOf(null));
     }
 
     @Test
@@ -317,7 +317,7 @@ class PersistentArrayTest {
         assertEquals(3, persistentArray.lastIndexOf("2"));
         assertEquals(0, persistentArray.lastIndexOf("1"));
         assertEquals(-1, persistentArray.lastIndexOf("11"));
-        assertThrows(NullPointerException.class, ()->persistentArray.indexOf(null));
+        assertThrows(NullPointerException.class, () -> persistentArray.indexOf(null));
     }
 
     @Test
@@ -336,9 +336,9 @@ class PersistentArrayTest {
         assertTrue(persistentArray.remove("2"));
         assertTrue(persistentArray.remove("1"));
         assertFalse(persistentArray.remove("11"));
-        assertThrows(NullPointerException.class, ()-> persistentArray.remove(null));
+        assertThrows(NullPointerException.class, () -> persistentArray.remove(null));
         assertEquals(2, persistentArray.size());
-        assertEquals("[2, 100]",persistentArray.toString());
+        assertEquals("[2, 100]", persistentArray.toString());
     }
 
     @Test
@@ -357,7 +357,7 @@ class PersistentArrayTest {
         assertTrue(persistentArray.contains("2"));
         assertTrue(persistentArray.contains("1"));
         assertFalse(persistentArray.contains("11"));
-        assertThrows(NullPointerException.class, ()-> persistentArray.contains(null));
+        assertThrows(NullPointerException.class, () -> persistentArray.contains(null));
     }
 
     @Test
@@ -448,7 +448,7 @@ class PersistentArrayTest {
 
         collection.add(null);
 
-        assertThrows(NullPointerException.class, ()-> persistentArray.containsAll(collection));
+        assertThrows(NullPointerException.class, () -> persistentArray.containsAll(collection));
 
         collection.remove(null);
         collection.add("1000");
@@ -480,41 +480,85 @@ class PersistentArrayTest {
         assertTrue(persistentArray.addAll(collection));
         assertTrue(persistentArray.addAll(collection));
 
-        assertEquals("[1, 2, 3, 2, 100, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD]",persistentArray.toString());
+        assertEquals("[1, 2, 3, 2, 100, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD]", persistentArray.toString());
 
         persistentArray.undo();
 
-        assertEquals("[1, 2, 3, 2, 100, 1, 2, 3, 100, ABBBSD]",persistentArray.toString());
+        assertEquals("[1, 2, 3, 2, 100, 1, 2, 3, 100, ABBBSD]", persistentArray.toString());
 
         persistentArray.undo();
 
-        assertEquals("[1, 2, 3, 2, 100]",persistentArray.toString());
+        assertEquals("[1, 2, 3, 2, 100]", persistentArray.toString());
 
         persistentArray.redo();
         persistentArray.redo();
 
-        assertEquals("[1, 2, 3, 2, 100, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD]",persistentArray.toString());
+        assertEquals("[1, 2, 3, 2, 100, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD]", persistentArray.toString());
 
         persistentArray.undo();
         persistentArray.undo();
 
-        assertTrue(persistentArray.addAll(2,collection));
-        assertTrue(persistentArray.addAll(2,collection));
+        assertTrue(persistentArray.addAll(2, collection));
+        assertTrue(persistentArray.addAll(2, collection));
 
-        assertEquals("[1, 2, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD, 3, 2, 100]",persistentArray.toString());
-
-        persistentArray.undo();
-
-        assertEquals("[1, 2, 1, 2, 3, 100, ABBBSD, 3, 2, 100]",persistentArray.toString());
+        assertEquals("[1, 2, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD, 3, 2, 100]", persistentArray.toString());
 
         persistentArray.undo();
 
-        assertEquals("[1, 2, 3, 2, 100]",persistentArray.toString());
+        assertEquals("[1, 2, 1, 2, 3, 100, ABBBSD, 3, 2, 100]", persistentArray.toString());
+
+        persistentArray.undo();
+
+        assertEquals("[1, 2, 3, 2, 100]", persistentArray.toString());
 
         persistentArray.redo();
         persistentArray.redo();
 
-        assertEquals("[1, 2, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD, 3, 2, 100]",persistentArray.toString());
+        assertEquals("[1, 2, 1, 2, 3, 100, ABBBSD, 1, 2, 3, 100, ABBBSD, 3, 2, 100]", persistentArray.toString());
 
+    }
+
+    @Test
+    void largeInsertTest() {
+        int toStore = 1000;
+        PersistentArray<Integer> persistentArray = new PersistentArray<>();
+
+        for (int i = 0; i < toStore; i++) {
+            persistentArray.add(i);
+        }
+
+        assertEquals(toStore, persistentArray.size());
+
+        for (int i = 0; i < toStore; i++) {
+            assertEquals(i, persistentArray.get(i));
+        }
+
+        for (int i = 0; i < toStore; i++) {
+            persistentArray.undo();
+        }
+
+        assertTrue(persistentArray.isEmpty());
+
+        for (int i = 0; i < toStore; i++) {
+            persistentArray.redo();
+        }
+
+        assertEquals(toStore, persistentArray.size());
+
+        for (int i = 0; i < toStore; i++) {
+            assertEquals(i, persistentArray.get(i));
+        }
+
+        assertEquals(toStore, persistentArray.size());
+
+        for (int i = 0; i < toStore; i++) {
+            assertEquals(i, persistentArray.remove(0));
+        }
+
+        assertTrue(persistentArray.isEmpty());
+
+        for (int i = 0; i < toStore; i++) {
+            persistentArray.undo();
+        }
     }
 }
