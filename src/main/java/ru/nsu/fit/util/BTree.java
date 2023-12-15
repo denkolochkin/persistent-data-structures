@@ -1,30 +1,26 @@
 package ru.nsu.fit.util;
 
-import javafx.util.Pair;
 import lombok.Getter;
-import ru.nsu.fit.list.ListHead;
-import ru.nsu.fit.list.ListItem;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 
 @Getter
+@Setter
 public class BTree<E> {
     private int depth;
     private int mask;
     private int maxSize;
     private int bits = 2;
     private int width;
-    private final Node<E> root;
     private int size = 0;
+    private int actualSize = 0;
 
-    public BTree() {
-        initialization(1, 4);
-        this.root = new Node<>();
-    }
+    private Node<E> root;
 
     public BTree(int size) {
-        initialization((int) Math.ceil(Math.log(size) / Math.log( (int) Math.pow(2, bits))), bits);
+        initialization((int) Math.ceil(Math.log(size) / Math.log((int) Math.pow(2, bits))), bits);
         this.root = new Node<>();
     }
 
@@ -32,44 +28,43 @@ public class BTree<E> {
         this.depth = depth;
         this.bits = bits;
 
-        initialization((int) Math.ceil(Math.log(size) / Math.log( (int) Math.pow(2, bits))), bits);
+        initialization(depth, bits);
 
         this.root = new Node<>();
     }
 
     public BTree(BTree<E> other) {
-        initialization(other.depth,other.bits);
+        initialization(other.depth, other.bits);
         this.root = new Node<>(other.root);
         this.size = other.size;
         this.width = other.width;
         this.mask = other.mask;
+        this.actualSize = other.actualSize;
+        this.maxSize = other.maxSize;
     }
 
     public BTree(BTree<E> other, Integer newSize) {
-        initialization(other.depth,other.bits);
+        initialization(other.depth, other.bits);
         this.root = other.createSubTree(newSize);
         this.size = newSize;
+        this.actualSize = newSize;
     }
 
     protected void initialization(int depth, int bits) {
         this.bits = bits;
-        if(depth > 0) {
+        if (depth > 0) {
             this.depth = depth;
-        }else{
+        } else {
             this.depth = 1;
         }
 
         updateInformationAboutTree();
     }
 
-    private void updateInformationAboutTree(){
+    private void updateInformationAboutTree() {
         mask = (int) Math.pow(2, bits) - 1;
         maxSize = (int) Math.pow(2, bits * depth);
         width = (int) Math.pow(2, bits);
-    }
-
-    public int getSize() {
-        return size;
     }
 
     @Override
@@ -77,11 +72,11 @@ public class BTree<E> {
         return String.format("%20x %d", root.hashCode(), size);
     }
 
-    private void increaseDepthOfTree(){
+    private void increaseDepthOfTree() {
         Node<E> newNode = new Node<>();
-        if(root.getValue() == null) {
+        if (root.getValue() == null) {
             newNode.setChild(root.getChild());
-        }else{
+        } else {
             newNode.setValue(root.getValue());
             root.setValue(null);
         }
@@ -94,15 +89,16 @@ public class BTree<E> {
 
     public boolean add(E element) {
         size++;
+        actualSize++;
 
-        if(size > maxSize){
+        if (size > maxSize) {
             increaseDepthOfTree();
         }
 
         Node<E> foundNode = root;
 
         for (int level = bits * (depth - 1); level > 0; level -= bits) {
-            int widthIndex = ((size - 1) >> level) & mask;
+            int widthIndex = ((actualSize - 1) >> level) & mask;
             Node<E> newNode;
 
             if (foundNode.getChild() == null) {
@@ -132,7 +128,7 @@ public class BTree<E> {
         return true;
     }
 
-    public boolean add(int index, E element){
+    public boolean add(int index, E element) {
         findNode(index).getValue().set(index & mask, element);
 
         return true;
@@ -152,69 +148,11 @@ public class BTree<E> {
         foundNode.getValue().set(index & mask, element);
     }
 
-    public Node<ListItem<E>> findLeaf(ListHead<ListItem<E>> head) {
-        head.setSize(head.getSize() + 1);
-        head.setSizeTree(head.getSizeTree() + 1);
-
-        Node<ListItem<E>> currentNode = head.getRoot();
-        for (int level = bits * (depth - 1); level > 0; level -= bits) {
-            int widthIndex = ((head.getSizeTree() - 1) >> level) & mask;
-
-            Node<ListItem<E>> tmp;
-            Node<ListItem<E>> newNode;
-            if (currentNode.getChild() == null) {
-                currentNode.setChild(new LinkedList<>());
-                newNode = new Node<>();
-                currentNode.getChild().add(newNode);
-            } else {
-                if (widthIndex == currentNode.getChild().size()) {
-                    newNode = new Node<>();
-                    currentNode.getChild().add(newNode);
-                } else {
-                    tmp = currentNode.getChild().get(widthIndex);
-                    newNode = new Node<>(tmp);
-                    currentNode.getChild().set(widthIndex, newNode);
-                }
-            }
-            currentNode = newNode;
-        }
-
-        if (currentNode.getValue() == null) {
-            currentNode.setValue(new ArrayList<>());
-        }
-
-        return currentNode;
-    }
-
-    public Pair<Node<ListItem<E>>, Integer> copyLeaf(ListHead<ListItem<E>> newHead, int index) {
-        Node<ListItem<E>> currentNode = newHead.getRoot();
-        for (int level = bits * (depth - 1); level > 0; level -= bits) {
-            int widthIndex = (index >> level) & mask;
-            Node<ListItem<E>> tmp;
-            Node<ListItem<E>> newNode;
-            tmp = currentNode.getChild().get(widthIndex);
-            newNode = new Node<>(tmp);
-            currentNode.getChild().set(widthIndex, newNode);
-            currentNode = newNode;
-        }
-
-        return new Pair<>(currentNode, index & mask);
-    }
-
-    public Pair<Node<ListItem<E>>, Integer> getLeaf(ListHead<ListItem<E>> head, int index) {
-        Node<ListItem<E>> node = head.getRoot();
-        for (int level = bits * (depth - 1); level > 0; level -= bits) {
-            int widthIndex = (index >> level) & mask;
-            node = node.getChild().get(widthIndex);
-        }
-
-        return new Pair<>(node, index & mask);
-    }
-
-    public void remove(int index){
+    public void remove(int index) {
         findNode(index).getValue().remove(index & mask);
 
         size--;
+        actualSize--;
     }
 
     public Node<E> findNode(int index) {
@@ -251,7 +189,7 @@ public class BTree<E> {
     }
 
     public E get(int index) {
-        if(index < 0 || index >= size){
+        if (index < 0 || index >= actualSize) {
             throw new IndexOutOfBoundsException();
         }
 

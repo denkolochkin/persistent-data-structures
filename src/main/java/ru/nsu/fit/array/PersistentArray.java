@@ -29,6 +29,9 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         this.redoStack.addAll(other.redoStack);
     }
 
+    /**
+     * Отмена последнего изменения.
+     */
     @Override
     public void undo() {
         if (!undoStack.empty()) {
@@ -36,6 +39,9 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         }
     }
 
+    /**
+     * Отмена последнего undo().
+     */
     @Override
     public void redo() {
         if (!redoStack.empty()) {
@@ -90,8 +96,8 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
     /**
      * Добавление элемента в конец массива.
      *
-     * @param element элемени
-     * @return true если массив изменился в результате вызова
+     * @param element элемент.
+     * @return true если массив изменился в результате вызова.
      */
     @Override
     public boolean add(T element) {
@@ -120,10 +126,9 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      * и любые последующие элементы вправо (добавляет единицу к их индексам).
      * </p>
      *
-     * @param index   индекc, указание позиции
+     * @param index   индекс, указание позиции
      * @param element элемент
      */
-
     @Override
     public void add(int index, T element) {
         if (index < 0 || index >= size()) {
@@ -149,6 +154,7 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      * Сдвигает любые последующие элементы влево (вычитает единицу из их индексов).
      * Возвращает элемент, который был удален из массива.
      * </p>
+     *
      * @param index позиция элемента
      * @return удаленный элемент
      */
@@ -186,16 +192,32 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         redoStack.clear();
     }
 
+    /**
+     * Получение элемента по индексу.
+     *
+     * @param index индекс элемента.
+     * @return Найденный элемент, либо IndexOutOfBoundsException при некорректном индексе.
+     */
     @Override
     public T get(int index) {
         return takeLatestVersion().get(index);
     }
 
+    /**
+     * Преобразование элементов массива в строку.
+     *
+     * @return строка из элементов вида [a, b, c].
+     */
     @Override
     public String toString() {
         return Arrays.toString(this.toArray());
     }
 
+    /**
+     * Преобразование элементов в массив.
+     *
+     * @return массив элементов.
+     */
     @Override
     public Object[] toArray() {
         Object[] objects = new Object[size()];
@@ -212,11 +234,23 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return null;
     }
 
+    /**
+     * Проверка элемента на вхождение в массиве.
+     *
+     * @param o элемент для проверки.
+     * @return true, если элемент содержится в массиве.
+     */
     @Override
     public boolean contains(Object o) {
         return indexOf(o) >= 0;
     }
 
+    /**
+     * Проверка элементов на вхождение в массиве.
+     *
+     * @param c коллекция элементов для проверки.
+     * @return true, если все элементы коллекции содержатся в массиве.
+     */
     @Override
     public boolean containsAll(Collection<?> c) {
         for (Object e : c)
@@ -226,6 +260,12 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return true;
     }
 
+    /**
+     * Добавление коллекции элементов.
+     *
+     * @param c элементы для добавления.
+     * @return true, если добавлены успешно.
+     */
     @Override
     public boolean addAll(Collection<? extends T> c) {
         BTree<T> tree = new BTree<>(takeLatestVersion());
@@ -237,6 +277,13 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return modified;
     }
 
+    /**
+     * Добавление коллекции элементов начиная с индекса.
+     *
+     * @param index индекс, начиная с которого происходит добавление.
+     * @param c элементы для добавления.
+     * @return true, если добавлены успешно.
+     */
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
         BTree<T> oldHead = takeLatestVersion();
@@ -259,6 +306,12 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return modified;
     }
 
+    /**
+     * Удаление элемента из массива.
+     *
+     * @param o удаляемый элемент.
+     * @return true, если удален успешно.
+     */
     @Override
     public boolean remove(Object o) {
         int indexOfElementToDelete = indexOf(o);
@@ -282,6 +335,12 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return false;
     }
 
+    /**
+     * Определение индекса элемента в массиве.
+     *
+     * @param o элемент.
+     * @return индекс элемента.
+     */
     @Override
     public int indexOf(Object o) {
         if (o == null) {
@@ -299,6 +358,12 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return -1;
     }
 
+    /**
+     * Определение последнего индекса элемента в массиве.
+     *
+     * @param o элемент.
+     * @return последний индекс элемента.
+     */
     @Override
     public int lastIndexOf(Object o) {
         if (o == null) {
@@ -339,14 +404,27 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return new PersistentArrayIterator<>();
     }
 
+    /**
+     * Итератор над персистентным массивом.
+     */
     public class PersistentArrayIterator<T> implements Iterator<T> {
         int index = 0;
 
+        /**
+         * Проверка наличия следующего элемента.
+         *
+         * @return true, если есть следующий.
+         */
         @Override
         public boolean hasNext() {
             return index < size();
         }
 
+        /**
+         * Получение следующего элемента массива.
+         *
+         * @return следующий элемент.
+         */
         @Override
         public T next() {
             return (T) PersistentArray.this.get(index++);
@@ -358,6 +436,10 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         }
     }
 
+
+    /**
+     * Итератор списка над персистентным массивом.
+     */
     public class PersistentArrayIteratorList<T> implements ListIterator<T> {
         int index;
 
@@ -369,11 +451,21 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
             this.index = index;
         }
 
+        /**
+         * Проверка наличия следующего элемента.
+         *
+         * @return true, если есть следующий.
+         */
         @Override
         public boolean hasNext() {
             return index < size();
         }
 
+        /**
+         * Получение следующего элемента массива.
+         *
+         * @return следующий элемент.
+         */
         @Override
         public T next() {
             if (!hasNext()) {

@@ -243,6 +243,22 @@ class PersistentLinkedListTest {
         persistentLinkedList.set(1, 9);
 
         assertEquals("[0, 9]", persistentLinkedList.toString());
+
+        persistentLinkedList.add(10);
+
+        assertEquals("[0, 9, 10]", persistentLinkedList.toString());
+
+        persistentLinkedList.set(0, 1);
+        persistentLinkedList.set(1, 1);
+        persistentLinkedList.set(2, 1);
+
+        assertEquals("[1, 1, 1]", persistentLinkedList.toString());
+
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+        persistentLinkedList.undo();
+
+        assertEquals("[0, 9, 10]", persistentLinkedList.toString());
     }
 
     @Test
@@ -367,5 +383,48 @@ class PersistentLinkedListTest {
         assertEquals(persistentLinkedList.size(), newList.size());
         assertEquals(persistentLinkedList.getVersionCount(), newList.getVersionCount());
         assertEquals(persistentLinkedList.getCurrentHead(), newList.getCurrentHead());
+    }
+
+    @Test
+    void largeInsertTest(){
+        int toStore = 1000;
+
+        for(int i = 0; i < toStore; i++) {
+            persistentLinkedList.add(i);
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for (int i = 0; i < toStore; i++){
+            assertEquals(i, persistentLinkedList.get(i));
+        }
+
+        for (int i = 0; i < toStore; i++){
+            persistentLinkedList.undo();
+        }
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        for (int i = 0; i < toStore; i++){
+            persistentLinkedList.redo();
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for (int i = 0; i < toStore; i++){
+            assertEquals(i, persistentLinkedList.get(i));
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for (int i = 0; i < toStore; i++){
+            assertEquals(i, persistentLinkedList.remove(0));
+        }
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        for (int i = 0; i < toStore; i++){
+            persistentLinkedList.undo();
+        }
     }
 }
