@@ -190,6 +190,11 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         return get(getCurrentHead(), index);
     }
 
+    /**
+     * Преобразование элементов списка в строку.
+     *
+     * @return строка из элементов вида [a, b, c].
+     */
     @Override
     public String toString() {
         ListHead<ListItem<E>> currentHead = getCurrentHead();
@@ -202,6 +207,11 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
     }
 
+    /**
+     * Преобразование списка в массив.
+     *
+     * @return массив элементов списка.
+     */
     @Override
     public Object[] toArray() {
         return toArray(getCurrentHead());
@@ -229,11 +239,21 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
             current = head.get(head.getFirst());
         }
 
+        /**
+         * Проверка наличия следующего элемента.
+         *
+         * @return true, если есть следующий.
+         */
         @Override
         public boolean hasNext() {
             return head.getSize() > i;
         }
 
+        /**
+         * Получение следующего элемента списка.
+         *
+         * @return следующий элемент.
+         */
         @Override
         public T next() {
             //noinspection unchecked
@@ -250,6 +270,9 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         }
     }
 
+    /**
+     * Отмена последнего изменения.
+     */
     @Override
     public void undo() {
         if (!undo.empty()) {
@@ -257,6 +280,9 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         }
     }
 
+    /**
+     * Отмена последнего undo().
+     */
     @Override
     public void redo() {
         if (!redo.empty()) {
@@ -264,28 +290,49 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         }
     }
 
+    /**
+     * Получение размера списка.
+     *
+     * @return размер списка.
+     */
     @Override
     public int size() {
-        return size(getCurrentHead());
+        return getHeadSize(getCurrentHead());
     }
 
-    public int size(ListHead<ListItem<E>> head) {
-        return head.getSize();
-    }
-
+    /**
+     * Получение текущей головы списка.
+     *
+     * @return актуальная голова списка.
+     */
     public ListHead<ListItem<E>> getCurrentHead() {
         return this.undo.peek();
     }
 
+    /**
+     * Проверка на полноту списка.
+     *
+     * @return true, если список полон.
+     */
     public boolean isFull() {
         return isFull(getCurrentHead());
     }
 
+    /**
+     * Проверка на пустоту списка.
+     *
+     * @return true, если список пуст.
+     */
     @Override
     public boolean isEmpty() {
         return getCurrentHead().isEmpty();
     }
 
+    /**
+     * Получение числа версий списка.
+     *
+     * @return число версий списка.
+     */
     public int getVersionCount() {
         return undo.size() + redo.size();
     }
@@ -401,6 +448,10 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         }
 
         return trueIndex;
+    }
+
+    private int getHeadSize(ListHead<ListItem<E>> head) {
+        return head.getSize();
     }
 
     private E get(ListHead<ListItem<E>> head, int index) {
