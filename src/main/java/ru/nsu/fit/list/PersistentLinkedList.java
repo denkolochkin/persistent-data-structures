@@ -1,10 +1,7 @@
 package ru.nsu.fit.list;
 
-import javafx.util.Pair;
 import ru.nsu.fit.Interfaces.UndoRedoInterface;
 import ru.nsu.fit.util.Constants;
-import ru.nsu.fit.util.Node;
-import ru.nsu.fit.util.BTree;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,11 +75,11 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
 
             ListItem<E> last = new ListItem<>(elem);
 
-            last.setNext(newHead.getTrueSize());
+            last.setNext(newHead.getActualSize());
 
             newHead.set(prevHead.getLast(), last);
 
-            newHead.setLast(newHead.getTrueSize());
+            newHead.setLast(newHead.getActualSize());
             newHead.add(listElement);
         }
 
@@ -115,7 +112,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         int indexAfter = -1;
         ListItem<E> afterElement;
 
-        int freeIndex = prevHead.getTrueSize();
+        int freeIndex = prevHead.getActualSize();
 
         if (prevHead.isEmpty()) {
             newHead = new ListHead<>(prevHead);
@@ -124,17 +121,10 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
                 indexBefore = getTreeIndex(prevHead, index - 1);
 
                 newHead = new ListHead<>(prevHead);
-                //Pair<Node<ListItem<E>>, Integer> node = newHead.copyLeaf(newHead, indexBefore);
-                //Node<ListItem<E>> copy = node.getKey();
-                //int leafIndex = node.getValue();
-
                 beforeElement = new ListItem<>(newHead.get(indexBefore));
 
-                //beforeElement = new ListItem<>(copy.getValue().get(leafIndex));
                 beforeElement.setNext(freeIndex);
                 newHead.set(indexBefore, beforeElement);
-
-                //copy.getValue().set(leafIndex, beforeElement);
             }
 
             if (index != prevHead.getSize() - 1) {
@@ -304,11 +294,9 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         E result = get(index);
 
         ListHead<ListItem<E>> newHead = new ListHead<>(head);
-
         ListItem<E> newNode = new ListItem<>(newHead.get(index));
+
         newNode.setValue(element);
-
-
         newHead.set(getTreeIndex(index), newNode);
 
         undo.push(newHead);
@@ -342,17 +330,11 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         if (mid.getPrev() == -1) {
             int treeNextIndex = getTreeIndex(nextIndex);
 
-            //newHead.findNode(nextIndex);
-
             ListItem<E> next = getElement(newHead, nextIndex);
             ListItem<E> newNext = new ListItem<>(next);
             newNext.setPrev(-1);
 
-            //Pair<Node<ListItem<E>>, Integer> leafNext = newHead.getLeaf(newHead, treeNextIndex);
-            //leafNext.getKey().getValue().set(treeNextIndex & newHead.getMask(), newNext);
-
             newHead.set(treeNextIndex, newNext);
-
             newHead.setFirst(treeNextIndex);
 
             finishRemove(newHead);
@@ -364,15 +346,11 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
             int treePrevIndex = getTreeIndex(prevIndex);
 
             ListItem<E> prev = getElement(newHead, prevIndex);
-
             ListItem<E> newPrev = new ListItem<>(prev);
+
             newPrev.setNext(-1);
 
-            //Pair<Node<ListItem<E>>, Integer> leafPrev = newHead.getLeaf(newHead, treePrevIndex);
-            //leafPrev.getKey().getValue().set(treePrevIndex & newHead.getMask(), newPrev);
-
             newHead.set(treePrevIndex, newPrev);
-
             newHead.setLast(treePrevIndex);
 
             finishRemove(newHead);
@@ -384,33 +362,19 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
         int treePrevIndex = getTreeIndex(prevIndex);
 
         newHead = new ListHead<>(prevHead);
-        //newHead.copyLeaf(newHead, nextIndex);
-
-        //newHead.findNode(nextIndex);
 
         ListItem<E> next = getElement(newHead, nextIndex);
         ListItem<E> newNext = new ListItem<>(next);
 
         newNext.setPrev(mid.getPrev());
-
-        //Pair<Node<ListItem<E>>, Integer> leafNext = newHead.getLeaf(newHead, treeNextIndex);
-        //leafNext.getKey().getValue().set(treeNextIndex & newHead.getMask(), newNext);
-
         newHead.set(treeNextIndex, newNext);
 
         newHead = new ListHead<>(newHead);
-        //newHead.copyLeaf(newHead, prevIndex);
-
-        //newHead.findNode(prevIndex);
 
         ListItem<E> prev = getElement(newHead, prevIndex);
-
         ListItem<E> newPrev = new ListItem<>(prev);
 
         newPrev.setNext(mid.getNext());
-
-        //Pair<Node<ListItem<E>>, Integer> leafPrev = newHead.getLeaf(newHead, treePrevIndex);
-        //leafPrev.getKey().getValue().set(treePrevIndex & newHead.getMask(), newPrev);
 
         newHead.set(treePrevIndex, newPrev);
 
@@ -470,8 +434,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
     }
 
     private boolean isFull(ListHead<ListItem<E>> head) {
-        //return head.getTrueSize() >= head.getMaxSize();
-        return false;
+        return head.getActualSize() > head.getMaxSize();
     }
 
     /**

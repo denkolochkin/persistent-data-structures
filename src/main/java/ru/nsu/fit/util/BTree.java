@@ -1,10 +1,7 @@
 package ru.nsu.fit.util;
 
-import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
-import ru.nsu.fit.list.ListHead;
-import ru.nsu.fit.list.ListItem;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -17,15 +14,10 @@ public class BTree<E> {
     private int maxSize;
     private int bits = 2;
     private int width;
-    private Node<E> root;
     private int size = 0;
+    private int actualSize = 0;
 
-    private int trueSize = 0;
-
-    public BTree() {
-        initialization(1, 4);
-        this.root = new Node<>();
-    }
+    private Node<E> root;
 
     public BTree(int size) {
         initialization((int) Math.ceil(Math.log(size) / Math.log((int) Math.pow(2, bits))), bits);
@@ -47,14 +39,15 @@ public class BTree<E> {
         this.size = other.size;
         this.width = other.width;
         this.mask = other.mask;
-        this.trueSize = other.trueSize;
+        this.actualSize = other.actualSize;
+        this.maxSize = other.maxSize;
     }
 
     public BTree(BTree<E> other, Integer newSize) {
         initialization(other.depth, other.bits);
         this.root = other.createSubTree(newSize);
         this.size = newSize;
-        this.trueSize = newSize;
+        this.actualSize = newSize;
     }
 
     protected void initialization(int depth, int bits) {
@@ -72,10 +65,6 @@ public class BTree<E> {
         mask = (int) Math.pow(2, bits) - 1;
         maxSize = (int) Math.pow(2, bits * depth);
         width = (int) Math.pow(2, bits);
-    }
-
-    public int getSize() {
-        return size;
     }
 
     @Override
@@ -100,7 +89,7 @@ public class BTree<E> {
 
     public boolean add(E element) {
         size++;
-        trueSize++;
+        actualSize++;
 
         if (size > maxSize) {
             increaseDepthOfTree();
@@ -109,7 +98,7 @@ public class BTree<E> {
         Node<E> foundNode = root;
 
         for (int level = bits * (depth - 1); level > 0; level -= bits) {
-            int widthIndex = ((trueSize - 1) >> level) & mask;
+            int widthIndex = ((actualSize - 1) >> level) & mask;
             Node<E> newNode;
 
             if (foundNode.getChild() == null) {
@@ -163,7 +152,7 @@ public class BTree<E> {
         findNode(index).getValue().remove(index & mask);
 
         size--;
-        trueSize--;
+        actualSize--;
     }
 
     public Node<E> findNode(int index) {
@@ -200,7 +189,7 @@ public class BTree<E> {
     }
 
     public E get(int index) {
-        if (index < 0 || index >= trueSize) {
+        if (index < 0 || index >= actualSize) {
             throw new IndexOutOfBoundsException();
         }
 

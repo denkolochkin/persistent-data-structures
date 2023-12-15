@@ -26,13 +26,11 @@ public class ListHead<T> extends BTree<T> {
         super(other.getDepth(),other.getBits());
         this.setRoot(new Node<>(other.getRoot()));
         this.setSize(other.getSize());
-        this.setTrueSize(other.getTrueSize());
+        this.setActualSize(other.getActualSize());
         copy(other);
     }
 
     public boolean isEmpty() {
         return this.getSize() <= 0;
     }
-
-
 }
