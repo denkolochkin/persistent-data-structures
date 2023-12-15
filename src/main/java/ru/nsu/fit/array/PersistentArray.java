@@ -29,6 +29,9 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         this.redoStack.addAll(other.redoStack);
     }
 
+    /**
+     * Отмена последнего изменения.
+     */
     @Override
     public void undo() {
         if (!undoStack.empty()) {
@@ -36,6 +39,9 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         }
     }
 
+    /**
+     * Отмена последнего undo().
+     */
     @Override
     public void redo() {
         if (!redoStack.empty()) {
@@ -90,8 +96,8 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
     /**
      * Добавление элемента в конец массива.
      *
-     * @param element элемени
-     * @return true если массив изменился в результате вызова
+     * @param element элемент.
+     * @return true если массив изменился в результате вызова.
      */
     @Override
     public boolean add(T element) {
@@ -120,7 +126,7 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      * и любые последующие элементы вправо (добавляет единицу к их индексам).
      * </p>
      *
-     * @param index   индекc, указание позиции
+     * @param index   индекс, указание позиции
      * @param element элемент
      */
 

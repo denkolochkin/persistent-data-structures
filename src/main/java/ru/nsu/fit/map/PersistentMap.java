@@ -21,6 +21,9 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         }
     }
 
+    /**
+     * Отмена последнего изменения.
+     */
     @Override
     public void undo() {
         if (!undoStack.empty()) {
@@ -44,6 +47,9 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         }
     }
 
+    /**
+     * Отмена последнего undo().
+     */
     @Override
     public void redo() {
         if (!redoStack.empty()) {
@@ -67,6 +73,13 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         }
     }
 
+    /**
+     * Вставка пары ключ-значение.
+     *
+     * @param key ключ.
+     * @param value значение.
+     * @return вставленное значение.
+     */
     @Override
     public V put(K key, V value) {
         V result = get(key);
@@ -90,6 +103,11 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         return result;
     }
 
+    /**
+     * Вставка всех элементов из m.
+     *
+     * @param m Map с аналогично параметризованными ключами и значениями.
+     */
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
         for (Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
@@ -100,6 +118,12 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         redoStack.clear();
     }
 
+    /**
+     * Удаление значения по ключу.
+     *
+     * @param key ключ.
+     * @return удаленное значение.
+     */
     @Override
     public V remove(Object key) {
         int index = hashcodeIndex(key.hashCode());
@@ -117,6 +141,9 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         return null;
     }
 
+    /**
+     * Удаление всех элементов коллекции.
+     */
     @Override
     public void clear() {
         Collection<PersistentLinkedList<Entry<K, V>>> newArray = new ArrayList<>();
@@ -130,6 +157,12 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         table.addAll(newArray);
     }
 
+    /**
+     * Получение значения по ключу.
+     *
+     * @param key ключ, ассоциированный с искомым значением.
+     * @return значение, если было найдено по ключу, иначе - null.
+     */
     @Override
     public V get(Object key) {
         int index = hashcodeIndex(key.hashCode());
@@ -142,6 +175,11 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         return null;
     }
 
+    /**
+     * Получение множества ключей.
+     *
+     * @return Set ключей.
+     */
     @Override
     public Set<K> keySet() {
         Set<K> keySet = new HashSet<>();
@@ -153,6 +191,11 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         return keySet;
     }
 
+    /**
+     * Получение множества Entry.
+     *
+     * @return Set из всех Entry.
+     */
     @Override
     public Set<Entry<K, V>> entrySet() {
         Set<Entry<K, V>> entrySet = new HashSet<>();
@@ -162,6 +205,11 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
         return entrySet;
     }
 
+    /**
+     * Получение множества значений.
+     *
+     * @return Set значений.
+     */
     @Override
     public List<V> values() {
         List<V> values = new LinkedList<>();
