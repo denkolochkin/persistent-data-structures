@@ -427,4 +427,47 @@ class PersistentLinkedListTest {
             persistentLinkedList.undo();
         }
     }
+
+    @Test
+    void largeInsertTest(){
+        int toStore = 1000;
+
+        for(int i = 0; i < toStore; i++) {
+            persistentLinkedList.add(i);
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for (int i = 0; i < toStore; i++){
+            assertEquals(i, persistentLinkedList.get(i));
+        }
+
+        for (int i = 0; i < toStore; i++){
+            persistentLinkedList.undo();
+        }
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        for (int i = 0; i < toStore; i++){
+            persistentLinkedList.redo();
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for (int i = 0; i < toStore; i++){
+            assertEquals(i, persistentLinkedList.get(i));
+        }
+
+        assertEquals(1000, persistentLinkedList.size());
+
+        for (int i = 0; i < toStore; i++){
+            assertEquals(i, persistentLinkedList.remove(0));
+        }
+
+        assertTrue(persistentLinkedList.isEmpty());
+
+        for (int i = 0; i < toStore; i++){
+            persistentLinkedList.undo();
+        }
+    }
 }
