@@ -10,18 +10,17 @@ import java.util.*;
  * PersistentArray использует копирование пути для Б-дерева.
  */
 public class PersistentArray<T> implements List<T>, UndoRedoInterface {
-    private static final int TABLE_SIZE = 8;
+    private static final int ARRAY_SIZE = 8;
     protected final Stack<BTree<T>> redoStack = new Stack<>();
     protected final Stack<BTree<T>> undoStack = new Stack<>();
 
     public PersistentArray() {
-        this(TABLE_SIZE);
+        this(ARRAY_SIZE);
     }
 
     public PersistentArray(int size) {
-        BTree<T> head = new BTree<>(size);
-        undoStack.push(head);
-        redoStack.clear();
+        BTree<T> bTree = new BTree<>(size);
+        updateRedoUndoStack(bTree);
     }
 
     public PersistentArray(PersistentArray<T> other) {
@@ -84,11 +83,11 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
 
         T result = get(index);
 
-        BTree<T> bTree = new BTree<T>(takeLatestVersion());
-        undoStack.push(bTree);
-        redoStack.clear();
+        BTree<T> bTree = new BTree<>(takeLatestVersion());
 
         bTree.set(index, element);
+
+        updateRedoUndoStack(bTree);
 
         return result;
     }
@@ -101,10 +100,9 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      */
     @Override
     public boolean add(T element) {
-        BTree<T> tree = new BTree<>(takeLatestVersion());
-        undoStack.push(tree);
-        redoStack.clear();
-        return tree.add(element);
+        BTree<T> bTree = new BTree<>(takeLatestVersion());
+        updateRedoUndoStack(bTree);
+        return bTree.add(element);
     }
 
     public PersistentArray<T> conj(T element) {
@@ -135,17 +133,17 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
             throw new IndexOutOfBoundsException();
         }
 
-        BTree<T> oldHead = takeLatestVersion();
+        BTree<T> tbTree = takeLatestVersion();
 
         BTree<T> bTree = new BTree<>(takeLatestVersion(), index + 1);
-        undoStack.push(bTree);
-        redoStack.clear();
 
         bTree.set(index, element);
 
-        for (int i = index; i < oldHead.getSize(); i++) {
-            bTree.add(oldHead.get(i));
+        for (int i = index; i < tbTree.getSize(); i++) {
+            bTree.add(tbTree.get(i));
         }
+
+        updateRedoUndoStack(bTree);
     }
 
     /**
@@ -166,17 +164,17 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
 
         T result = get(index);
 
-        BTree<T> oldHead = takeLatestVersion();
+        BTree<T> tbTree = takeLatestVersion();
 
-        BTree<T> newHead = new BTree<>(takeLatestVersion(), index + 1);
-        undoStack.push(newHead);
-        redoStack.clear();
+        BTree<T> bTree = new BTree<>(takeLatestVersion(), index + 1);
 
-        newHead.remove(index);
+        bTree.remove(index);
 
-        for (int i = index + 1; i < oldHead.getSize(); i++) {
-            newHead.add(oldHead.get(i));
+        for (int i = index + 1; i < tbTree.getSize(); i++) {
+            bTree.add(tbTree.get(i));
         }
+
+        updateRedoUndoStack(bTree);
 
         return result;
     }
@@ -187,9 +185,8 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      */
     @Override
     public void clear() {
-        BTree<T> head = new BTree<>(takeLatestVersion().getSize());
-        undoStack.push(head);
-        redoStack.clear();
+        BTree<T> bTree = new BTree<>(takeLatestVersion().getSize());
+        updateRedoUndoStack(bTree);
     }
 
     /**
@@ -230,8 +227,8 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
     }
 
     @Override
-    public <T> T[] toArray(T[] a) {
-        return null;
+    public <E> E[] toArray(E[] a) {
+        return a;
     }
 
     /**
@@ -268,12 +265,13 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      */
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        BTree<T> tree = new BTree<>(takeLatestVersion());
-        undoStack.push(tree);
-        redoStack.clear();
+        BTree<T> bTree = new BTree<>(takeLatestVersion());
 
         boolean modified = false;
-        for (T e : c) if (tree.add(e)) modified = true;
+        for (T e : c) if (bTree.add(e)) modified = true;
+
+        updateRedoUndoStack(bTree);
+
         return modified;
     }
 
@@ -281,27 +279,26 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      * Добавление коллекции элементов начиная с индекса.
      *
      * @param index индекс, начиная с которого происходит добавление.
-     * @param c элементы для добавления.
+     * @param c     элементы для добавления.
      * @return true, если добавлены успешно.
      */
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
-        BTree<T> oldHead = takeLatestVersion();
+        BTree<T> tbTree = takeLatestVersion();
 
-        BTree<T> newHead = new BTree<>(takeLatestVersion(), index);
-        undoStack.push(newHead);
-        redoStack.clear();
-
+        BTree<T> bTree = new BTree<>(takeLatestVersion(), index);
 
         boolean modified = false;
 
         for (T e : c) {
-            if (newHead.add(e)) modified = true;
+            if (bTree.add(e)) modified = true;
         }
 
-        for (int i = index; i < oldHead.getSize(); i++) {
-            newHead.add(oldHead.get(i));
+        for (int i = index; i < tbTree.getSize(); i++) {
+            bTree.add(tbTree.get(i));
         }
+
+        updateRedoUndoStack(bTree);
 
         return modified;
     }
@@ -325,11 +322,17 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return true;
     }
 
+    /**
+     * ignored override
+     */
     @Override
     public boolean removeAll(Collection<?> c) {
         return false;
     }
 
+    /**
+     * ignored override
+     */
     @Override
     public boolean retainAll(Collection<?> c) {
         return false;
@@ -391,6 +394,9 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         return new PersistentArrayIteratorList<>(index);
     }
 
+    /**
+     * ignored override
+     */
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
         if (fromIndex < 0 || toIndex > takeLatestVersion().getSize() || fromIndex > toIndex) {
@@ -407,7 +413,7 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
     /**
      * Итератор над персистентным массивом.
      */
-    public class PersistentArrayIterator<T> implements Iterator<T> {
+    public class PersistentArrayIterator<E extends T> implements Iterator<T> {
         int index = 0;
 
         /**
@@ -426,8 +432,8 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
          * @return следующий элемент.
          */
         @Override
-        public T next() {
-            return (T) PersistentArray.this.get(index++);
+        public E next() {
+            return (E) PersistentArray.this.get(index++);
         }
 
         @Override
@@ -440,7 +446,7 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
     /**
      * Итератор списка над персистентным массивом.
      */
-    public class PersistentArrayIteratorList<T> implements ListIterator<T> {
+    public class PersistentArrayIteratorList<E extends T> implements ListIterator<T> {
         int index;
 
         public PersistentArrayIteratorList() {
@@ -467,11 +473,11 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
          * @return следующий элемент.
          */
         @Override
-        public T next() {
+        public E next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
-            return (T) PersistentArray.this.get(index++);
+            return (E) PersistentArray.this.get(index++);
         }
 
         @Override
@@ -480,11 +486,11 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         }
 
         @Override
-        public T previous() {
+        public E previous() {
             if (!hasPrevious()) {
                 throw new NoSuchElementException();
             }
-            return (T) PersistentArray.this.get(--index);
+            return (E) PersistentArray.this.get(--index);
         }
 
         @Override
@@ -503,17 +509,22 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
         }
 
         @Override
-        public void set(T t) {
-            //PersistentArray.this.set(index, (Class<E>) t);
+        public void set(T e) {
+            PersistentArray.this.set(index, e);
         }
 
         @Override
-        public void add(T t) {
-            //PersistentArray.this.add(t);
+        public void add(T e) {
+            PersistentArray.this.add(e);
         }
     }
 
     private BTree<T> takeLatestVersion() {
         return this.undoStack.peek();
+    }
+
+    private void updateRedoUndoStack(BTree<T> bTree){
+        undoStack.push(bTree);
+        redoStack.clear();
     }
 }

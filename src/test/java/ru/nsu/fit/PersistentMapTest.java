@@ -122,7 +122,7 @@ class PersistentMapTest {
         assertEquals(3, persistentMap.size());
         persistentMap.clear();
 
-        assertTrue( persistentMap.isEmpty());
+        assertTrue(persistentMap.isEmpty());
 
         persistentMap.undo();
 
@@ -157,11 +157,11 @@ class PersistentMapTest {
 
     @Test
     void testPersistentHashMapCascade() {
-        PersistentMap<String, PersistentMap<String,String>> persistentMap = new PersistentMap<>();
+        PersistentMap<String, PersistentMap<String, String>> persistentMap = new PersistentMap<>();
 
-        PersistentMap<String,String> persistentMap1 = new PersistentMap<>();
-        PersistentMap<String,String> persistentMap2 = new PersistentMap<>();
-        PersistentMap<String,String> persistentMap3 = new PersistentMap<>();
+        PersistentMap<String, String> persistentMap1 = new PersistentMap<>();
+        PersistentMap<String, String> persistentMap2 = new PersistentMap<>();
+        PersistentMap<String, String> persistentMap3 = new PersistentMap<>();
 
         persistentMap.put("SuperKey1", persistentMap1);
         persistentMap.put("SuperKey2", persistentMap2);
@@ -207,13 +207,13 @@ class PersistentMapTest {
         persistentMap.put("key2", "2");
         persistentMap.put("key3", "3");
 
-        Map<String,String> hashMap = new HashMap<>();
-        hashMap.put("key4","4");
-        hashMap.put("key5","5");
-        hashMap.put("key6","6");
-        hashMap.put("key7","7");
-        hashMap.put("key8","8");
-        hashMap.put("key9","9");
+        Map<String, String> hashMap = new HashMap<>();
+        hashMap.put("key4", "4");
+        hashMap.put("key5", "5");
+        hashMap.put("key6", "6");
+        hashMap.put("key7", "7");
+        hashMap.put("key8", "8");
+        hashMap.put("key9", "9");
 
         assertEquals(3, persistentMap.size());
 
@@ -234,6 +234,50 @@ class PersistentMapTest {
         assertEquals("7", persistentMap.get("key7"));
 
         assertEquals(9, persistentMap.size());
+    }
+
+    @Test
+    void largeInsertTest() {
+        int toStore = 1000;
+        PersistentMap<Integer, Integer> persistentMap = new PersistentMap<>();
+
+        for (int i = 0; i < toStore; i++) {
+            persistentMap.put(i, i);
+        }
+
+        assertEquals(toStore, persistentMap.size());
+
+        for (int i = 0; i < toStore; i++) {
+            assertEquals(i, persistentMap.get(i));
+        }
+
+        for (int i = 0; i < toStore; i++) {
+            persistentMap.undo();
+        }
+
+        assertTrue(persistentMap.isEmpty());
+
+        for (int i = 0; i < toStore; i++) {
+            persistentMap.redo();
+        }
+
+        assertEquals(toStore, persistentMap.size());
+
+        for (int i = 0; i < toStore; i++) {
+            assertEquals(i, persistentMap.get(i));
+        }
+
+        assertEquals(toStore, persistentMap.size());
+
+        for (int i = 0; i < toStore; i++) {
+            assertEquals(i, persistentMap.remove(i));
+        }
+
+        assertTrue(persistentMap.isEmpty());
+
+        for (int i = 0; i < toStore; i++) {
+            persistentMap.undo();
+        }
     }
 
 }

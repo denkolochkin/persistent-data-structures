@@ -89,16 +89,14 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
             Entry<K, V> pair = table.get(index).get(i);
             if (pair.getKey().equals(key)) {
                 table.get(index).set(i, new SimpleEntry<>(key, value));
-                undoStack.push(index);
-                redoStack.clear();
+                updateUndoRedoStack(index);
 
                 return result;
             }
         }
 
         table.get(index).add(new SimpleEntry<>(key, value));
-        undoStack.push(index);
-        redoStack.clear();
+        updateUndoRedoStack(index);
 
         return result;
     }
@@ -114,8 +112,7 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
             this.put(entry.getKey(), entry.getValue());
         }
 
-        undoStack.push(TABLE_MAX_SIZE + m.size());
-        redoStack.clear();
+        updateUndoRedoStack(TABLE_MAX_SIZE + m.size());
     }
 
     /**
@@ -132,8 +129,7 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
             if (pair.getKey().equals(key)) {
                 V value = pair.getValue();
                 table.get(index).remove(i);
-                undoStack.push(index);
-                redoStack.clear();
+                updateUndoRedoStack(index);
 
                 return value;
             }
@@ -151,8 +147,7 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
             newArray.add(new PersistentLinkedList<>());
         }
         table.clear();
-        undoStack.add(TABLE_MAX_SIZE);
-        redoStack.clear();
+        updateUndoRedoStack(TABLE_MAX_SIZE);
 
         table.addAll(newArray);
     }
@@ -254,5 +249,10 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
 
     private int hashcodeIndex(int hashcode) {
         return hashcode & (TABLE_MAX_SIZE - 1);
+    }
+
+    private void updateUndoRedoStack(int index){
+        undoStack.push(index);
+        redoStack.clear();
     }
 }
