@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import ru.nsu.fit.list.PersistentLinkedList;
 
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -386,7 +387,7 @@ class PersistentLinkedListTest {
     }
 
     @Test
-    void largeInsertTest(){
+    void largeInsertTest() {
         int toStore = 1000;
 
         for(int i = 0; i < toStore; i++) {
@@ -426,5 +427,18 @@ class PersistentLinkedListTest {
         for (int i = 0; i < toStore; i++){
             persistentLinkedList.undo();
         }
+    }
+
+    @Test
+    void objectListTest() {
+        PersistentLinkedList<Object> list = new PersistentLinkedList<>();
+
+        list.add(0);
+        list.add("string");
+        list.add(List.of("a", "b", "c"));
+
+        assertEquals("[0, string, [a, b, c]]", list.toString());
+        assertEquals(3, list.size());
+        assertEquals(4, list.getVersionCount());
     }
 }
