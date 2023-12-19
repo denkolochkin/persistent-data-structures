@@ -11,8 +11,8 @@ import java.util.*;
  */
 public class PersistentArray<T> implements List<T>, UndoRedoInterface {
     private static final int ARRAY_SIZE = 8;
-    protected final Stack<BTree<T>> redoStack = new Stack<>();
-    protected final Stack<BTree<T>> undoStack = new Stack<>();
+    protected final ArrayDeque<BTree<T>> redoStack = new ArrayDeque<>();
+    protected final ArrayDeque<BTree<T>> undoStack = new ArrayDeque<>();
 
     public PersistentArray() {
         this(ARRAY_SIZE);
@@ -33,7 +33,7 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      */
     @Override
     public void undo() {
-        if (!undoStack.empty()) {
+        if (!undoStack.isEmpty()) {
             redoStack.push(undoStack.pop());
         }
     }
@@ -43,7 +43,7 @@ public class PersistentArray<T> implements List<T>, UndoRedoInterface {
      */
     @Override
     public void redo() {
-        if (!redoStack.empty()) {
+        if (!redoStack.isEmpty()) {
             undoStack.push(redoStack.pop());
         }
     }

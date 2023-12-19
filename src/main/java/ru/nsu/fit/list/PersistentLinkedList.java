@@ -12,8 +12,8 @@ import static java.util.Objects.isNull;
  * Персистентный двусвязный список.
  */
 public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
-    private final Stack<ListHead<ListItem<E>>> redoStack = new Stack<>();
-    private final Stack<ListHead<ListItem<E>>> undoStack = new Stack<>();
+    private final ArrayDeque<ListHead<ListItem<E>>> redoDeque = new ArrayDeque<>();
+    private final ArrayDeque<ListHead<ListItem<E>>> undoDeque = new ArrayDeque<>();
 
     public PersistentLinkedList() {
         ListHead<ListItem<E>> head = new ListHead<>();
@@ -21,8 +21,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
     }
 
     public PersistentLinkedList(PersistentLinkedList<E> other) {
-        this.undoStack.addAll(other.undoStack);
-        this.redoStack.addAll(other.redoStack);
+        this.undoDeque.addAll(other.undoDeque);
+        this.redoDeque.addAll(other.redoDeque);
     }
 
     /**
@@ -256,8 +256,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public void undo() {
-        if (!undoStack.empty()) {
-            redoStack.push(undoStack.pop());
+        if (!undoDeque.isEmpty()) {
+            redoDeque.push(undoDeque.pop());
         }
     }
 
@@ -266,8 +266,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      */
     @Override
     public void redo() {
-        if (!redoStack.empty()) {
-            undoStack.push(redoStack.pop());
+        if (!redoDeque.isEmpty()) {
+            undoDeque.push(redoDeque.pop());
         }
     }
 
@@ -287,7 +287,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      * @return актуальная голова списка.
      */
     public ListHead<ListItem<E>> takeLatestVersion() {
-        return this.undoStack.peek();
+        return this.undoDeque.peek();
     }
 
     /**
@@ -306,7 +306,7 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
      * @return число версий списка.
      */
     public int getVersionCount() {
-        return undoStack.size() + redoStack.size();
+        return undoDeque.size() + redoDeque.size();
     }
 
     private E set(ListHead<ListItem<E>> head, int index, E element) {
@@ -429,8 +429,8 @@ public class PersistentLinkedList<E> implements List<E>, UndoRedoInterface {
     }
 
     private void updateUndoRedoStack(ListHead<ListItem<E>> head){
-        undoStack.push(head);
-        redoStack.clear();
+        undoDeque.push(head);
+        redoDeque.clear();
     }
 
     /**

@@ -11,8 +11,8 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
     private static final int TABLE_MAX_SIZE = 32;
 
     private final PersistentArray<PersistentLinkedList<Entry<K, V>>> table;
-    private final Stack<Integer> redoStack = new Stack<>();
-    private final Stack<Integer> undoStack = new Stack<>();
+    private final ArrayDeque<Integer> redoDeque = new ArrayDeque<>();
+    private final ArrayDeque<Integer> undoDeque = new ArrayDeque<>();
 
     public PersistentMap() {
         this.table = new PersistentArray<>(TABLE_MAX_SIZE);
@@ -26,24 +26,24 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
      */
     @Override
     public void undo() {
-        if (!undoStack.empty()) {
-            if (undoStack.peek().equals(TABLE_MAX_SIZE)) {
+        if (!undoDeque.isEmpty()) {
+            if (undoDeque.peek().equals(TABLE_MAX_SIZE)) {
                 table.undo();
                 table.undo();
-                redoStack.push(undoStack.pop());
+                redoDeque.push(undoDeque.pop());
                 return;
             }
-            if (undoStack.peek() > TABLE_MAX_SIZE) {
-                Integer peek = undoStack.pop();
+            if (undoDeque.peek() > TABLE_MAX_SIZE) {
+                Integer peek = undoDeque.pop();
                 for (int i = 0; i < peek - TABLE_MAX_SIZE; i++) {
-                    table.get(undoStack.peek()).undo();
-                    redoStack.push(undoStack.pop());
+                    table.get(undoDeque.peek()).undo();
+                    redoDeque.push(undoDeque.pop());
                 }
-                redoStack.push(peek);
+                redoDeque.push(peek);
                 return;
             }
-            table.get(undoStack.peek()).undo();
-            redoStack.push(undoStack.pop());
+            table.get(undoDeque.peek()).undo();
+            redoDeque.push(undoDeque.pop());
         }
     }
 
@@ -52,24 +52,24 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
      */
     @Override
     public void redo() {
-        if (!redoStack.empty()) {
-            if (redoStack.peek().equals(TABLE_MAX_SIZE)) {
+        if (!redoDeque.isEmpty()) {
+            if (redoDeque.peek().equals(TABLE_MAX_SIZE)) {
                 table.redo();
                 table.redo();
-                undoStack.push(redoStack.pop());
+                undoDeque.push(redoDeque.pop());
                 return;
             }
-            if (redoStack.peek() > TABLE_MAX_SIZE) {
-                Integer peek = redoStack.pop();
+            if (redoDeque.peek() > TABLE_MAX_SIZE) {
+                Integer peek = redoDeque.pop();
                 for (int i = 0; i < peek - TABLE_MAX_SIZE; i++) {
-                    table.get(redoStack.peek()).redo();
-                    undoStack.push(redoStack.pop());
+                    table.get(redoDeque.peek()).redo();
+                    undoDeque.push(redoDeque.pop());
                 }
-                undoStack.push(peek);
+                undoDeque.push(peek);
                 return;
             }
-            table.get(redoStack.peek()).redo();
-            undoStack.push(redoStack.pop());
+            table.get(redoDeque.peek()).redo();
+            undoDeque.push(redoDeque.pop());
         }
     }
 
@@ -252,7 +252,7 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements UndoRedoIn
     }
 
     private void updateUndoRedoStack(int index){
-        undoStack.push(index);
-        redoStack.clear();
+        undoDeque.push(index);
+        redoDeque.clear();
     }
 }
