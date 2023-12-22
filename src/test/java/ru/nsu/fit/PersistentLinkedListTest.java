@@ -2,6 +2,7 @@ package ru.nsu.fit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.nsu.fit.array.PersistentArray;
 import ru.nsu.fit.list.PersistentLinkedList;
 
 import java.util.Iterator;
@@ -437,8 +438,17 @@ class PersistentLinkedListTest {
         list.add("string");
         list.add(List.of("a", "b", "c"));
 
+        PersistentArray<Object> element = new PersistentArray<>();
+        element.add(1);
+        element.add(2);
+        list.add(element);
+
+        assertEquals("[0, string, [a, b, c], [1, 2]]", list.toString());
+
+        list.undo();
+
         assertEquals("[0, string, [a, b, c]]", list.toString());
         assertEquals(3, list.size());
-        assertEquals(4, list.getVersionCount());
+        assertEquals(5, list.getVersionCount());
     }
 }

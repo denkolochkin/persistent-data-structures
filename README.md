@@ -77,3 +77,11 @@
 - Поиск: *O(log n)* за счет использования дерева
 - Изменение: *O(log n)* за счет использования дерева
 - Вставка: *O(1)* так как можем преставить дерево в виде списка 
+
+### Алгоритмы обеспечения персистентности
+
+Статьи "Understanding Clojure's Persistent Vectors"
+
+https://hypirion.com/musings/understanding-persistent-vector-pt-1
+https://hypirion.com/musings/understanding-persistent-vector-pt-2
+
